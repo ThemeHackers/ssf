@@ -1,0 +1,14 @@
+{
+  "accepted_risks": [
+    {
+      "pattern": "public_.*", /* example */
+      "type": "rls", /* example */
+      "reason": "Public data by design" /* example */
+    },
+    {
+      "pattern": "get_status", /* example */
+      "type": "rpc", /* example */
+      "reason": "Safe public RPC" /* example */
+    }
+  ]
+}

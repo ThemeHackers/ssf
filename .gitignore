@@ -1,3 +1,4 @@
+# Python
 .venv/
 __pycache__/
 *.pyc
@@ -5,3 +6,20 @@ __pycache__/
 *.pyd
 *.pyw
 *.pyz
+
+# Environment Variables
+.env
+
+# Reports & Logs
+audit_report_*.json
+audit_report_*.html
+baseline.json
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
