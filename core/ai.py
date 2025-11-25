@@ -7,7 +7,7 @@ class AIAgent:
     def __init__(self, api_key: str):
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel(
-            'gemini-1.5-pro-latest',
+            'gemini-3-pro-preview',
             generation_config=genai.GenerationConfig(
                 max_output_tokens=8192,
                 temperature=0.4
