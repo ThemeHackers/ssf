@@ -154,6 +154,29 @@ Verify if accepted risks have been remediated and update the knowledge base:
 python3 ssf.py <URL> <KEY> --knowledge risks.json --verify-fix
 ```
 
+## 👑 10 The best command for a comprehensive audit
+```bash
+
+python3 ssf.py <SUPABASE_URL> <ANON_KEY>
+
+python3 ssf.py <URL> <KEY> --agent "KEY" --brute --html --json
+
+python3 ssf.py <URL> <KEY> --roles roles.json
+
+python3 ssf.py <URL> <KEY> --agent "KEY" --gen-fixes
+
+python3 ssf.py <URL> <KEY> --agent "KEY" --threat-model
+
+python3 ssf.py <URL> <KEY> --analyze ./supabase/migrations
+
+python3 ssf.py <URL> <KEY> --json > baseline.json
+
+python3 ssf.py <URL> <KEY> --diff baseline.json --ci
+
+python3 ssf.py <URL> <KEY> --knowledge risks.json --verify-fix
+
+python3 ssf.py <URL> <KEY> --proxy http://127.0.0.1:8080
+```
 ## 📊 Sample Output
 
 ```text
