@@ -14,6 +14,17 @@ class BaseScanner(ABC):
     def log(self, message: str, style: str = ""):
         if self.verbose:
             self.console.print(f"[{style}]{message}[/{style}]" if style else message)
+
+    def log_info(self, message: str):
+        self.log(f"[INFO] {message}", "blue")
+
+    def log_warn(self, message: str):
+        self.log(f"[WARN] {message}", "yellow")
+
+    def log_risk(self, message: str, level: str = "HIGH"):
+        color = "red" if level == "CRITICAL" else "yellow" if level == "HIGH" else "blue"
+        self.log(f"[RISK: {level}] {message}", f"bold {color}")
+
     def log_error(self, error: Exception):
         if self.verbose:
             self.console.print(f"[bold red][!] Error: {error}[/]")
