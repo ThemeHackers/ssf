@@ -23,7 +23,57 @@
 | **Edge Functions** | Enumerates public Edge Functions. |
 | **Database Extensions** | Detects 30+ extensions (e.g., `pg_cron`, `pg_net`) and assesses security risks. |
 | **GraphQL** | Checks for introspection leaks, **Query Depth**, and **Field Fuzzing**. |
+## ⚡ --roles <FILE> JSON Structure (Multi-Role Tokens)
+This file is used to store JSON Web Tokens (JWTs) for different user roles. ssf uses these tokens to perform Vertical Escalation testing (checking if lower-privileged users can access high-privilege data) against RLS-protected tables.
 
+⚙️ Format: JSON Object (Dictionary)
+The structure is a simple mapping where keys are descriptive role identifiers and values are the corresponding JWT strings.
+
+Example Structure: roles.json
+```bash
+{
+    "reader_role": "eyJh...",
+    "privileged_editor": "eyJh...",
+    "superuser_admin": "eyJh..."
+}
+```
+## ⚡ --knowledge <FILE> JSON Structure (Accepted Risks)
+This file acts as the Knowledge Base to define security risks that have been formally accepted or remediated. This prevents these findings from failing CI/CD runs or skewing the overall risk score.
+
+🧠 Format: JSON Object with Array of Rule Objects
+The structure is a top-level JSON Object containing a single key, "accepted_risks", which holds an array of individual Rule Objects.
+
+Example Structure: risks.json
+```bash
+{
+    "accepted_risks": [
+        {
+            "type": "rls",
+            "pattern": "public_posts",
+            "reason": "This table is designed to be publicly readable to all users, therefore RLS read access is accepted. Write access must still be blocked.",
+            "status": "active"
+        },
+        {
+            "type": "rpc",
+            "pattern": "log_client_event",
+            "reason": "This is a fire-and-forget RPC for anonymous event logging. It is designed to be executable by anyone and is low-risk.",
+            "status": "active"
+        },
+        {
+            "type": "storage",
+            "pattern": "marketing_assets",
+            "reason": "This bucket contains only public marketing material and is intentionally set to be publicly accessible.",
+            "status": "active"
+        },
+        {
+            "type": "*",
+            "pattern": "users",
+            "reason": "CRITICAL Auth Leak finding for 'users' table was accepted because we implemented a custom user table and the exposed one is a decoy.",
+            "status": "remediated"
+        }
+    ]
+}
+```
 ## 📦 Installation
 
 1. **Clone the repository**:
