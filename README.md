@@ -90,6 +90,17 @@ python3 ssf.py <URL> <KEY> --agent "KEY" --threat-model
 ### ✅ Advanced Risk Acceptance
 Verify if accepted risks have been remediated and update the knowledge base:
 ```bash
+# risks.json:
+{
+    "accepted_risks": [
+        {
+            "type": "",
+            "pattern": "",
+            "reason": "",
+            "status": ""
+        }
+    ]
+}
 python3 ssf.py <URL> <KEY> --knowledge risks.json --verify-fix
 ```
 
