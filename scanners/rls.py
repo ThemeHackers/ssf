@@ -10,15 +10,25 @@ class RLSScanner(BaseScanner):
     async def scan(self, table: str, table_info: Dict[str, Any]) -> Dict[str, Any]:
         columns = table_info.get("columns", {})
         pk_col = table_info.get("pk", "id")
-        self.log(f"[*] Scanning table: {table}", "cyan")
+        self.log_info(f"[*] Scanning table: {table}")
         endpoint = f"/rest/v1/{table}"
         result = {"table": table, "read": False, "write": False, "risk": "SAFE"}
         try:
-            r = await self.client.get(endpoint, params={"limit": 1}, headers={"Prefer": "count=exact"})
+            r = await self.client.get(endpoint, params={"limit": 5}, headers={"Prefer": "count=exact"})
             if r.status_code in [200, 206]:
                 result["read"] = True
                 count = r.headers.get("content-range", "unknown").split("/")[-1]
-                self.log(f"    [+] Read access confirmed for {table} (Rows: {count})", "green")
+                self.log_risk(f"    [+] Read access confirmed for {table} (Rows: {count})", "HIGH")
+                
+                try:
+                    data = r.json()
+                    if data:
+                        self.console.print(f"\n[bold green]    [+] Extracted Rows from {table}:[/]")
+                        for row in data:
+                            self.console.print(f"        {row}")
+                        self.console.print("\n")
+                except Exception: pass
+
             operators = ["gt", "gte", "lt", "lte", "neq", "is", "ilike", "not.like", "cs", "cd"]
             test_col = pk_col
             for op in operators:
@@ -30,12 +40,12 @@ class RLSScanner(BaseScanner):
                 if r_op.status_code in [200, 206]:
                      op_count = r_op.headers.get("content-range", "unknown").split("/")[-1]
                      if op_count != "unknown" and op_count != "0":
-                         self.log(f"    [!] Operator Injection '{op}' worked on {table}! (Rows: {op_count})", "bold red")
+                         self.log_risk(f"    [!] Operator Injection '{op}' worked on {table}! (Rows: {op_count})", "CRITICAL")
                          result["read"] = True 
                          result["risk"] = "CRITICAL" 
             discovered_users = self.context.get("users", [])
             if discovered_users:
-                self.log(f"    [*] Testing Horizontal Escalation with {len(discovered_users)} leaked IDs...", "cyan")
+                self.log_info(f"    [*] Testing Horizontal Escalation with {len(discovered_users)} leaked IDs...")
                 for uid in discovered_users[:3]: 
                     target_cols = [c for c in columns.keys() if any(x in c.lower() for x in ["user", "owner", "auth", "id"])]
                     if not target_cols:
@@ -48,7 +58,7 @@ class RLSScanner(BaseScanner):
                                 if r_hpe.status_code in [200, 206]:
                                     hpe_count = r_hpe.headers.get("content-range", "unknown").split("/")[-1]
                                     if hpe_count != "unknown" and hpe_count != "0":
-                                        self.log(f"    [!] Horizontal Escalation SUCCESS on {table}! (Accessed data for {uid})", "bold red")
+                                        self.log_risk(f"    [!] Horizontal Escalation SUCCESS on {table}! (Accessed data for {uid})", "CRITICAL")
                                         result["read"] = True
                                         result["risk"] = "CRITICAL"
                                         break 
@@ -66,7 +76,7 @@ class RLSScanner(BaseScanner):
             if r.status_code in [200, 204, 404]:
                  if r.status_code != 404:
                      result["write"] = True
-                     self.log(f"    [!] UPDATE (PATCH) access confirmed for {table}", "bold red")
+                     self.log_risk(f"    [!] UPDATE (PATCH) access confirmed for {table}", "CRITICAL")
         except Exception as e:
             self.log_error(e)
         try:
@@ -75,7 +85,7 @@ class RLSScanner(BaseScanner):
              if r.status_code in [200, 204, 404]:
                  if r.status_code != 404:
                      result["write"] = True
-                     self.log(f"    [!] DELETE access confirmed for {table}", "bold red")
+                     self.log_risk(f"    [!] DELETE access confirmed for {table}", "CRITICAL")
         except Exception as e:
             self.log_error(e)
         try:
@@ -83,7 +93,7 @@ class RLSScanner(BaseScanner):
             r = await self.client.post(endpoint, json=payload, headers={"Prefer": "return=representation"})
             if r.status_code == 201:
                 result["write"] = True
-                self.log(f"    [!] INSERT (POST) access confirmed for {table}", "bold red")
+                self.log_risk(f"    [!] INSERT (POST) access confirmed for {table}", "CRITICAL")
                 try:
                     resp_json = r.json()
                     if resp_json and isinstance(resp_json, list) and len(resp_json) > 0:
@@ -92,11 +102,11 @@ class RLSScanner(BaseScanner):
                         if pk_value:
                             cleanup_val = f"eq.{pk_value}"
                             await self.client.delete(f"{endpoint}?{pk_col}={cleanup_val}")
-                            self.log(f"        [+] Cleanup successful ({pk_col}={pk_value})", "green")
+                            self.log_info(f"        [+] Cleanup successful ({pk_col}={pk_value})")
                         else:
-                            self.log(f"        [!] Cleanup failed: Could not find PK '{pk_col}' in response", "yellow")
+                            self.log_warn(f"        [!] Cleanup failed: Could not find PK '{pk_col}' in response")
                 except Exception as e:
-                    self.log(f"        [!] Cleanup failed: {e}", "red")
+                    self.log_warn(f"        [!] Cleanup failed: {e}")
         except Exception as e:
             self.log_error(e)
         if result["write"]: result["risk"] = "CRITICAL"
@@ -104,7 +114,7 @@ class RLSScanner(BaseScanner):
             result["risk"] = "HIGH" if any(x in table for x in ["user", "secret", "admin", "key"]) else "MEDIUM"
         return result
     async def _check_blind_rls(self, table: str, pk_col: str, result: Dict[str, Any]):
-        self.log(f"    [*] Testing Blind RLS on {table}...", "cyan")
+        self.log_info(f"    [*] Testing Blind RLS on {table}...")
         endpoint = f"/rest/v1/{table}"
         try:
             params = {pk_col: "eq.1", "select": f"{pk_col}::text"} 
@@ -120,12 +130,12 @@ class RLSScanner(BaseScanner):
             await self.client.get(endpoint, params=params)
             target_time = time.time() - start_time
             if target_time > (baseline * 5) and target_time > 0.5:
-                 self.log(f"    [?] Possible Blind RLS (Timing) on {table} (Baseline: {baseline:.2f}s, Target: {target_time:.2f}s)", "yellow")
+                 self.log_warn(f"    [?] Possible Blind RLS (Timing) on {table} (Baseline: {baseline:.2f}s, Target: {target_time:.2f}s)")
                  if result["risk"] == "SAFE":
                      result["risk"] = "LOW"
         except: pass
     async def _check_vertical_escalation(self, table: str, endpoint: str, result: Dict[str, Any]):
-        self.log(f"    [*] Testing Vertical Escalation on {table} with {len(self.tokens)} roles...", "cyan")
+        self.log_info(f"    [*] Testing Vertical Escalation on {table} with {len(self.tokens)} roles...")
         for role, token in self.tokens.items():
             headers = {"Authorization": f"Bearer {token}", "Prefer": "count=exact"}
             try:
@@ -133,9 +143,9 @@ class RLSScanner(BaseScanner):
                 can_read = r.status_code in [200, 206]
                 if can_read:
                     count = r.headers.get("content-range", "unknown").split("/")[-1]
-                    self.log(f"        [+] Role '{role}' can READ {table} (Rows: {count})", "green")
+                    self.log_risk(f"        [+] Role '{role}' can READ {table} (Rows: {count})", "HIGH")
                     if not result["read"]:
-                        self.log(f"        [!] Vertical Escalation: Role '{role}' has READ access (Anon does not)", "yellow")
+                        self.log_risk(f"        [!] Vertical Escalation: Role '{role}' has READ access (Anon does not)", "CRITICAL")
                         result.setdefault("escalation", []).append(f"{role}:READ")
             except Exception as e:
                 self.log_error(e)
