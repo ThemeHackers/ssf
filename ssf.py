@@ -23,6 +23,7 @@ from scanners.brute import BruteScanner
 from scanners.graphql import GraphQLScanner
 from scanners.functions import EdgeFunctionScanner
 from scanners.realtime import RealtimeScanner
+from scanners.extensions import ExtensionsScanner
 from core.diff import DiffEngine
 from core.report import HTMLReporter, FixGenerator
 from core.banner import show_banner
@@ -51,6 +52,8 @@ async def main():
     parser.add_argument("--html", action="store_true", help="Generate HTML report")
     parser.add_argument("--knowledge", help="Path to knowledge base JSON file")
     parser.add_argument("--ci", action="store_true", help="Exit with non-zero code on critical issues (for CI/CD)")
+    parser.add_argument("--fail-on", help="Risk level to fail on (default: HIGH)", default="HIGH", choices=["CRITICAL", "HIGH", "MEDIUM", "LOW"])
+    parser.add_argument("--ci-format", help="CI Output format", default="text", choices=["text", "github"])
     parser.add_argument("--proxy", help="Proxy URL (e.g., http://127.0.0.1:8080)", default=None)
     parser.add_argument("--exploit", action="store_true", help="Automatically run generated exploits")
     parser.add_argument("--gen-fixes", action="store_true", help="Generate SQL fix script from AI analysis")
@@ -60,7 +63,7 @@ async def main():
     args = parser.parse_args()
 
     if args.compile:
-        # Already handled above, but kept for argparse help message consistency
+      
         return
 
     config = TargetConfig(url=args.url, key=args.key, gemini_key=args.agent, verbose=args.verbose, proxy=args.proxy)
@@ -169,6 +172,7 @@ async def main():
 
         function_scanner = EdgeFunctionScanner(client, verbose=config.verbose, context=shared_context, custom_list=custom_functions)
         realtime_scanner = RealtimeScanner(client, verbose=config.verbose, context=shared_context)
+        extensions_scanner = ExtensionsScanner(client, verbose=config.verbose, context=shared_context)
 
         MAX_CONCURRENT_REQUESTS = 20
         sem = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
@@ -197,13 +201,14 @@ async def main():
             brute_scanner.scan() if args.brute else asyncio.sleep(0),
             graphql_scanner.scan(),
             function_scanner.scan(),
-            realtime_scanner.scan()
+            realtime_scanner.scan(),
+            extensions_scanner.scan(spec)
         ]
 
         results = await asyncio.gather(*tasks)
-        res_rls, res_storage, res_rpc, res_brute, res_graphql, res_functions, res_realtime = (
+        res_rls, res_storage, res_rpc, res_brute, res_graphql, res_functions, res_realtime, res_extensions = (
             results[0], results[1], results[2], 
-            results[3] if args.brute else [], results[4], results[5], results[6]
+            results[3] if args.brute else [], results[4], results[5], results[6], results[7]
         )
         
 
@@ -229,7 +234,7 @@ async def main():
             "rls": res_rls, "auth": res_auth, "storage": res_storage, 
             "rpc": res_rpc, "brute": res_brute,
             "graphql": res_graphql, "functions": res_functions,
-            "realtime": res_realtime
+            "realtime": res_realtime, "extensions": res_extensions
         }
         full_report["accepted_risks"] = accepted_risks
 
@@ -326,6 +331,16 @@ async def main():
         
         console.print(Panel(infra_tree, title="[bold]Realtime & Storage[/]", border_style="magenta"))
 
+        ext_tree = Tree("[bold]Extensions[/]")
+        if res_extensions:
+            for ext in res_extensions:
+                color = "red" if ext["risk"] == "HIGH" else "yellow" if ext["risk"] == "MEDIUM" else "blue"
+                ext_tree.add(f"[{color}]{ext['name']} ({ext['risk']}) - {ext['details']}[/{color}]")
+        else:
+            ext_tree.add("[dim]No extensions detected[/]")
+        
+        console.print(Panel(ext_tree, title="[bold]Database Extensions[/]", border_style="cyan"))
+
         if config.has_ai:
             from rich.live import Live
             from rich.text import Text
@@ -421,24 +436,9 @@ async def main():
             console.print("\n[bold yellow][!] --gen-fixes requires --agent (AI) to be enabled.[/]")
 
         if args.ci:
-            failure_reasons = []
-            
-            critical_issues = [r for r in res_rls if r.get('risk') in ['CRITICAL', 'HIGH'] and r.get('risk') != 'ACCEPTED']
-            if critical_issues:
-                failure_reasons.append(f"{len(critical_issues)} Critical/High RLS issues found")
-
-            if res_auth["leaked"]:
-                failure_reasons.append("Auth Leak Detected")
-
-            if diff_results and diff_results['rls']['new']:
-                failure_reasons.append(f"{len(diff_results['rls']['new'])} New RLS Regressions")
-
-            if failure_reasons:
-                console.print(f"\n[bold red]❌ CI Failure: {', '.join(failure_reasons)}[/]")
-                import sys
-                sys.exit(1)
-            else:
-                console.print("\n[bold green]✔ CI Passed: No critical issues or regressions found.[/]")
+            from core.ci import CIHandler
+            ci_handler = CIHandler(fail_on=args.fail_on, format=args.ci_format)
+            ci_handler.evaluate(full_report, diff_results)
 
 if __name__ == "__main__":
     try: asyncio.run(main())

@@ -21,20 +21,19 @@
 | **Storage Buckets** | Checks for public write access and listing capabilities. |
 | **Realtime Channels** | Detects open WebSocket channels broadcasting sensitive events. |
 | **Edge Functions** | Enumerates public Edge Functions. |
-| **GraphQL** | Checks for introspection leaks. |
+| **Database Extensions** | Detects 30+ extensions (e.g., `pg_cron`, `pg_net`) and assesses security risks. |
+| **GraphQL** | Checks for introspection leaks, **Query Depth**, and **Field Fuzzing**. |
 
 ## 📦 Installation
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/ThemeHackers/ssf
-   cd ssf
+   git clone https://github.com/yourusername/supa-sniffer.git
+   cd supa-sniffer
    ```
 
 2. **Install dependencies**:
    ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate
    pip3 install -r requirements.txt
    ```
 
@@ -105,6 +104,8 @@ python3 ssf.py <URL> <KEY> --agent "KEY" --gen-fixes
 | `--diff <FILE>` | Compare current scan vs previous JSON report |
 | `--knowledge <FILE>` | Path to accepted risks JSON file |
 | `--ci` | Exit with non-zero code on critical issues (for CI/CD) |
+| `--fail-on <LEVEL>` | Risk level to fail on (default: HIGH) |
+| `--ci-format <FMT>` | CI Output format (text/github) |
 | `--proxy <URL>` | Route traffic through an HTTP proxy |
 | `--exploit` | **DANGER**: Auto-run generated exploits |
 | `--gen-fixes` | Generate SQL fix script from AI analysis |

@@ -26,7 +26,7 @@ The following are **features**, not bugs, and should not be reported as vulnerab
 - The AI suggesting an exploit that works.
 
 ### ✅ How to Report
-Please email security findings to **security@kpltgroup.com** (replace with actual email) or open a **Private GitHub Advisory**.
+Please email security findings to **security@example.com** (replace with actual email) or open a **Private GitHub Advisory**.
 
 **DO NOT** open a public issue for sensitive security vulnerabilities in the tool itself.
 
