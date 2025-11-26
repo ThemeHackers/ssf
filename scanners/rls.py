@@ -1,20 +1,28 @@
 import httpx
 from typing import Dict, Any
 import time
+import csv
+import os
+from datetime import datetime
 from core.base import BaseScanner
 from core.utils import generate_smart_payload
+
 class RLSScanner(BaseScanner):
-    def __init__(self, client: httpx.AsyncClient, verbose: bool = False, context: Dict[str, Any] = None, tokens: Dict[str, str] = None):
+    def __init__(self, client: httpx.AsyncClient, verbose: bool = False, context: Dict[str, Any] = None, tokens: Dict[str, str] = None, dump_all: bool = False):
         super().__init__(client, verbose, context)
         self.tokens = tokens or {}
+        self.dump_all = dump_all
+
     async def scan(self, table: str, table_info: Dict[str, Any]) -> Dict[str, Any]:
         columns = table_info.get("columns", {})
         pk_col = table_info.get("pk", "id")
         self.log_info(f"[*] Scanning table: {table}")
         endpoint = f"/rest/v1/{table}"
         result = {"table": table, "read": False, "write": False, "risk": "SAFE"}
+        
         try:
-            r = await self.client.get(endpoint, params={"limit": 5}, headers={"Prefer": "count=exact"})
+            limit = 10000 if self.dump_all else 5
+            r = await self.client.get(endpoint, params={"limit": limit}, headers={"Prefer": "count=exact"})
             if r.status_code in [200, 206]:
                 result["read"] = True
                 count = r.headers.get("content-range", "unknown").split("/")[-1]
@@ -24,9 +32,30 @@ class RLSScanner(BaseScanner):
                     data = r.json()
                     if data:
                         self.console.print(f"\n[bold green]    [+] Extracted Rows from {table}:[/]")
-                        for row in data:
+                        # Only print first 5 rows to console to avoid flooding
+                        for row in data[:5]:
                             self.console.print(f"        {row}")
+                        if len(data) > 5:
+                            self.console.print(f"        ... and {len(data)-5} more rows")
                         self.console.print("\n")
+
+                        # Auto-dump to CSV
+                        try:
+                            dump_dir = "dumps"
+                            os.makedirs(dump_dir, exist_ok=True)
+                            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                            filename = f"{dump_dir}/{table}_{timestamp}.csv"
+                            
+                            if len(data) > 0:
+                                keys = data[0].keys()
+                                with open(filename, "w", newline="", encoding="utf-8") as f:
+                                    writer = csv.DictWriter(f, fieldnames=keys)
+                                    writer.writeheader()
+                                    writer.writerows(data)
+                                self.console.print(f"[green]    [+] Data dumped to {filename}[/]")
+                        except Exception as e:
+                            self.log_warn(f"    [!] Failed to dump CSV: {e}")
+
                 except Exception: pass
 
             operators = ["gt", "gte", "lt", "lte", "neq", "is", "ilike", "not.like", "cs", "cd"]
