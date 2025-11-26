@@ -1,10 +1,6 @@
 from typing import Dict, Any, List
 class DiffEngine:
     def compare(self, current: Dict[str, Any], previous: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Compares current findings with previous findings.
-        Returns a dictionary with 'new', 'resolved', and 'unchanged' items.
-        """
         diff = {
             "rls": self._diff_list(current.get("findings", {}).get("rls", []), 
                                    previous.get("findings", {}).get("rls", []), 

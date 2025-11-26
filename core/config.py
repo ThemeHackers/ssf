@@ -12,7 +12,6 @@ class TargetConfig(BaseModel):
     @property
     def has_ai(self) -> bool:
         return bool(self.gemini_key)
-
 class Wordlists:
     tables = [
         "users", "profiles", "admin", "secrets", "logs", "transactions",

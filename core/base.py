@@ -10,17 +10,10 @@ class BaseScanner(ABC):
         self.context = context if context is not None else {}
     @abstractmethod
     async def scan(self) -> Any:
-        """
-        Execute the scan logic and return the results.
-        The return type can be a Dict, List, or any structure suitable for the report.
-        """
         pass
     def log(self, message: str, style: str = ""):
-        """Helper for verbose logging"""
         if self.verbose:
             self.console.print(f"[{style}]{message}[/{style}]" if style else message)
-
     def log_error(self, error: Exception):
-        """Helper for logging errors in verbose mode"""
         if self.verbose:
             self.console.print(f"[bold red][!] Error: {error}[/]")

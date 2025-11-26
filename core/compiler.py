@@ -4,16 +4,12 @@ import os
 import platform
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
-
 console = Console()
-
 class Compiler:
     def __init__(self):
         self.os_name = platform.system().lower()
-
     def compile(self):
         console.print(f"[bold cyan][*] Starting compilation for {self.os_name}...[/]")
-        
         cmd = [
             "pyinstaller",
             "--noconfirm",
@@ -25,7 +21,6 @@ class Compiler:
             "--hidden-import", "pydantic",
             "ssf.py"
         ]
-
         try:
             process = subprocess.Popen(
                 cmd,
@@ -33,14 +28,12 @@ class Compiler:
                 stderr=subprocess.PIPE,
                 text=True
             )
-
             with Progress(
                 SpinnerColumn(),
                 TextColumn("[progress.description]{task.description}"),
                 console=console
             ) as progress:
                 task = progress.add_task("[cyan]Initializing PyInstaller...", total=None)
-                
                 while True:
                     output = process.stdout.readline()
                     if output == '' and process.poll() is not None:
@@ -49,7 +42,6 @@ class Compiler:
                         line = output.strip()
                         if line:
                             progress.update(task, description=f"[cyan]{line}")
-
             if process.returncode == 0:
                 console.print("\n[bold green]✔ Compilation Successful![/]")
                 dist_path = os.path.join("dist", "ssf")
@@ -59,6 +51,5 @@ class Compiler:
             else:
                 console.print("\n[bold red]❌ Compilation Failed![/]")
                 console.print(process.stderr.read())
-
         except Exception as e:
             console.print(f"[bold red]❌ Error: {e}[/]")

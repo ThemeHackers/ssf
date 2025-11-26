@@ -1,19 +1,31 @@
 import json
 from datetime import datetime
 from typing import Dict, Any
-
+VULN_TO_COMPLIANCE = {
+    "rls": {
+        "OWASP": "API1:2023 (BOLA)",
+        "SOC2": "CC6.1 (Access Control)"
+    },
+    "auth": {
+        "OWASP": "API3:2023 (BOPLA)",
+        "SOC2": "CC6.1 (Access Control)"
+    },
+    "rpc": {
+        "OWASP": "API8:2023 (Misconfiguration)",
+        "SOC2": "CC6.8 (Software Update)"
+    },
+    "storage": {
+        "OWASP": "API1:2023 (BOLA)",
+        "SOC2": "CC6.1 (Access Control)"
+    }
+}
 class HTMLReporter:
     def generate(self, report: Dict[str, Any], diff: Dict[str, Any] = None) -> str:
-        """
-        Generates a standalone HTML report.
-        """
         findings = report.get("findings", {})
         target = report.get("target", "Unknown")
         timestamp = report.get("timestamp", datetime.now().isoformat())
-        
         css = """
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
-        
         :root {
             --bg-body: #0f172a;
             --bg-card: #1e293b;
@@ -27,7 +39,6 @@ class HTMLReporter:
             --success: #10b981;
             --border: #334155;
         }
-
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-body);
@@ -36,19 +47,16 @@ class HTMLReporter:
             padding: 40px 20px;
             line-height: 1.6;
         }
-
         .container {
             max-width: 1200px;
             margin: 0 auto;
         }
-
         /* Header */
         header {
             text-align: center;
             margin-bottom: 60px;
             position: relative;
         }
-        
         header::after {
             content: '';
             position: absolute;
@@ -60,7 +68,6 @@ class HTMLReporter:
             background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
             border-radius: 2px;
         }
-
         h1 {
             font-size: 3rem;
             font-weight: 700;
@@ -69,7 +76,6 @@ class HTMLReporter:
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-
         .meta {
             margin-top: 15px;
             color: var(--text-muted);
@@ -78,9 +84,7 @@ class HTMLReporter:
             justify-content: center;
             gap: 20px;
         }
-        
         .meta strong { color: var(--accent-secondary); }
-
         /* Summary Grid */
         .summary-grid {
             display: grid;
@@ -88,7 +92,6 @@ class HTMLReporter:
             gap: 25px;
             margin-bottom: 50px;
         }
-
         .stat-card {
             background: var(--bg-card);
             border: 1px solid var(--border);
@@ -99,13 +102,11 @@ class HTMLReporter:
             position: relative;
             overflow: hidden;
         }
-        
         .stat-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
             border-color: var(--accent-primary);
         }
-
         .stat-value {
             font-size: 3.5rem;
             font-weight: 700;
@@ -115,7 +116,6 @@ class HTMLReporter:
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-
         .stat-label {
             color: var(--text-muted);
             font-size: 0.9rem;
@@ -123,7 +123,6 @@ class HTMLReporter:
             letter-spacing: 1.5px;
             font-weight: 600;
         }
-
         /* Sections */
         h2 {
             font-size: 1.8rem;
@@ -134,7 +133,6 @@ class HTMLReporter:
             align-items: center;
             gap: 15px;
         }
-        
         h2::before {
             content: '';
             display: block;
@@ -143,7 +141,6 @@ class HTMLReporter:
             background: var(--accent-primary);
             border-radius: 3px;
         }
-
         /* Tables */
         .table-container {
             background: var(--bg-card);
@@ -152,18 +149,15 @@ class HTMLReporter:
             overflow: hidden;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
-
         table {
             width: 100%;
             border-collapse: collapse;
         }
-
         th, td {
             padding: 20px;
             text-align: left;
             border-bottom: 1px solid var(--border);
         }
-
         th {
             background-color: rgba(255, 255, 255, 0.03);
             color: var(--text-muted);
@@ -172,10 +166,8 @@ class HTMLReporter:
             font-size: 0.85rem;
             letter-spacing: 1px;
         }
-
         tr:last-child td { border-bottom: none; }
         tr:hover { background-color: var(--bg-card-hover); }
-
         /* Badges */
         .badge {
             padding: 6px 12px;
@@ -186,13 +178,11 @@ class HTMLReporter:
             letter-spacing: 0.5px;
             display: inline-block;
         }
-        
         .badge.critical { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
         .badge.high { background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.3); }
         .badge.medium { background: rgba(251, 191, 36, 0.2); color: #fde68a; border: 1px solid rgba(251, 191, 36, 0.3); }
         .badge.safe { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
         .badge.accepted { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
-
         /* Panels */
         .panel {
             background: var(--bg-card);
@@ -201,12 +191,10 @@ class HTMLReporter:
             padding: 25px;
             margin-bottom: 25px;
         }
-        
         .panel.critical {
             border-color: var(--danger);
             background: linear-gradient(to right, rgba(239, 68, 68, 0.1), transparent);
         }
-
         /* AI Section */
         .ai-section {
             background: linear-gradient(145deg, #2e1065, #1e1b4b);
@@ -217,7 +205,6 @@ class HTMLReporter:
             position: relative;
             overflow: hidden;
         }
-        
         .ai-section::before {
             content: 'AI';
             position: absolute;
@@ -228,7 +215,6 @@ class HTMLReporter:
             color: rgba(255, 255, 255, 0.03);
             pointer-events: none;
         }
-
         .ai-header {
             display: flex;
             align-items: center;
@@ -237,20 +223,17 @@ class HTMLReporter:
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             padding-bottom: 15px;
         }
-        
         .ai-title {
             font-size: 1.5rem;
             font-weight: 700;
             color: #e9d5ff;
             margin: 0;
         }
-
         .ai-content {
             color: #e2e8f0;
             font-size: 1.05rem;
             line-height: 1.7;
         }
-
         .remediation-box {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 8px;
@@ -258,7 +241,6 @@ class HTMLReporter:
             margin-top: 20px;
             border-left: 4px solid var(--accent-primary);
         }
-
         .remediation-title {
             color: #d8b4fe;
             font-weight: 700;
@@ -267,7 +249,6 @@ class HTMLReporter:
             font-size: 0.9rem;
             text-transform: uppercase;
         }
-
         pre {
             background: #0f172a;
             padding: 15px;
@@ -279,11 +260,9 @@ class HTMLReporter:
             border: 1px solid #334155;
             margin: 0;
         }
-        
         ul { padding-left: 20px; }
         li { margin-bottom: 8px; }
         """
-        
         html = f"""
         <!DOCTYPE html>
         <html lang="en">
@@ -291,50 +270,55 @@ class HTMLReporter:
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Supabase Audit Report</title>
-            <style>{css}</style>
+            <style>
+                   {css}</style>
         </head>
         <body>
             <div class="container">
                 <header>
                     <h1>Supabase Security Audit</h1>
                     <div class="meta">
-                        <span>Target: <strong>{target}</strong></span>
+                        <span>Target: <strong>
+                                              {target}</strong></span>
                         <span>•</span>
-                        <span>Scanned: <strong>{timestamp}</strong></span>
+                        <span>Scanned: <strong>
+                                               {timestamp}</strong></span>
                     </div>
                 </header>
-                
                 <div class="summary-grid">
                     <div class="stat-card">
-                        <div class="stat-value" style="color: var(--danger)">{len([r for r in findings.get('rls', []) if r['risk'] == 'CRITICAL'])}</div>
+                        <div class="stat-value" style="color: var(--danger)">
+                                                                             {len([r for r in findings.get('rls', []) if r['risk'] == 'CRITICAL'])}</div>
                         <div class="stat-label">Critical RLS</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value" style="color: var(--warning)">{len([r for r in findings.get('rpc', []) if r.get('risk') == 'CRITICAL'])}</div>
+                        <div class="stat-value" style="color: var(--warning)">
+                                                                              {len([r for r in findings.get('rpc', []) if r.get('risk') == 'CRITICAL'])}</div>
                         <div class="stat-label">Vuln RPCs</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value" style="color: { 'var(--danger)' if findings.get('auth', {}).get('leaked') else 'var(--success)' }">
+                        <div class="stat-value" style="color: 
+                                                              { 'var(--danger)' if findings.get('auth', {}).get('leaked') else 'var(--success)' }">
                             {'YES' if findings.get('auth', {}).get('leaked') else 'NO'}
                         </div>
                         <div class="stat-label">Auth Leak</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value">{len(findings.get('storage', []))}</div>
+                        <div class="stat-value">
+                                                {len(findings.get('storage', []))}</div>
                         <div class="stat-label">Buckets</div>
                     </div>
                 </div>
         """
-        
         auth = findings.get("auth", {})
         if auth.get("leaked"):
             html += f"""
             <div class="panel critical">
                 <h3 style="color: var(--danger); margin-top: 0;">⚠️ CRITICAL: Auth Data Leak Detected</h3>
-                <p>Found <strong>{auth.get('count')}</strong> users exposed in public tables. Immediate action required.</p>
+                <p>Found <strong>
+                                 {auth.get('count')}</strong> users exposed in public tables. Immediate action required.</p>
             </div>
             """
-        
         html += """
         <h2>Row Level Security (RLS)</h2>
         <div class="table-container">
@@ -345,11 +329,11 @@ class HTMLReporter:
                         <th>Read Access</th>
                         <th>Write Access</th>
                         <th>Risk Assessment</th>
+                        <th>Compliance</th>
                     </tr>
                 </thead>
                 <tbody>
         """
-        
         for r in findings.get("rls", []):
             risk_lower = r['risk'].lower()
             badge_class = "safe"
@@ -357,26 +341,32 @@ class HTMLReporter:
             elif r['risk'] == 'HIGH': badge_class = "high"
             elif r['risk'] == 'MEDIUM': badge_class = "medium"
             elif r['risk'] == 'ACCEPTED': badge_class = "accepted"
-            
             risk_label = r['risk']
             if r.get('accepted_reason'):
                 risk_label += f" ({r['accepted_reason']})"
-
             html += f"""
             <tr>
-                <td style="font-weight: 600; color: var(--text-main);">{r['table']}</td>
-                <td>{'<span style="color: var(--success)">✔ Allowed</span>' if r['read'] else '<span style="color: var(--text-muted)">-</span>'}</td>
-                <td>{'<span style="color: var(--danger); font-weight: bold;">⚠ LEAK</span>' if r['write'] else '<span style="color: var(--text-muted)">-</span>'}</td>
-                <td><span class="badge {badge_class}">{risk_label}</span></td>
+                <td style="font-weight: 600; color: var(--text-main);">
+                                                                       {r['table']}</td>
+                <td>
+                    {'<span style="color: var(--success)">✔ Allowed</span>' if r['read'] else '<span style="color: var(--text-muted)">-</span>'}</td>
+                <td>
+                    {'<span style="color: var(--danger); font-weight: bold;">⚠ LEAK</span>' if r['write'] else '<span style="color: var(--text-muted)">-</span>'}</td>
+                <td><span class="badge 
+                                       {badge_class}">{risk_label}</span></td>
+                <td>
+                    <span class="badge" style="background: #334155; color: #cbd5e1;">
+                                                                                     {VULN_TO_COMPLIANCE['rls']['OWASP']}</span>
+                    <span class="badge" style="background: #334155; color: #cbd5e1;">
+                                                                                     {VULN_TO_COMPLIANCE['rls']['SOC2']}</span>
+                </td>
             </tr>
             """
         html += "</tbody></table></div>"
-        
         if diff:
             html += '<h2>Comparison with Previous Scan</h2><div class="panel">'
             new_rls = diff.get("rls", {}).get("new", [])
             resolved_rls = diff.get("rls", {}).get("resolved", [])
-            
             if new_rls:
                 html += "<h3 style='color: var(--danger)'>New Issues</h3><ul>"
                 for item in new_rls:
@@ -390,7 +380,6 @@ class HTMLReporter:
             else:
                 html += "<p style='color: var(--text-muted)'>No changes detected.</p>"
             html += "</div>"
-
         ai_analysis = report.get("ai_analysis", {})
         if ai_analysis and "error" not in ai_analysis:
             html += f"""
@@ -399,69 +388,57 @@ class HTMLReporter:
                     <span style="font-size: 2rem;">🤖</span>
                     <h3 class="ai-title" style="color: #4c1d95;">AI Security Assessment</h3>
                 </div>
-                
                 <div class="ai-content" style="color: #334155;">
-                    <p><strong>Risk Level:</strong> <span class="badge {ai_analysis.get('risk_level', 'LOW').lower()}">{ai_analysis.get('risk_level', 'Unknown')}</span></p>
-                    <p>{ai_analysis.get('summary', '').replace(chr(10), '<br>')}</p>
+                    <p><strong>Risk Level:</strong> <span class="badge 
+                                                                       {ai_analysis.get('risk_level', 'LOW').lower()}">{ai_analysis.get('risk_level', 'Unknown')}</span></p>
+                    <p>
+                       {ai_analysis.get('summary', '').replace(chr(10), '<br>')}</p>
                 </div>
             """
-            
             fixes = ai_analysis.get("fixes", {})
             if fixes:
                 html += "<div style='margin-top: 30px;'><h4 style='color: #4c1d95; margin-bottom: 15px;'>🛡️ Recommended Remediation</h4>"
                 for category, fix in fixes.items():
                     html += f"""
                     <div class="remediation-box" style="background: #f8fafc; border-left: 4px solid #8b5cf6;">
-                        <span class="remediation-title" style="color: #6d28d9;">{category.upper()}</span>
-                        <pre style="background: #f1f5f9; color: #0f172a; border: 1px solid #e2e8f0;">{fix}</pre>
+                        <span class="remediation-title" style="color: #6d28d9;">
+                                                                                {category.upper()}</span>
+                        <pre style="background: #f1f5f9; color: #0f172a; border: 1px solid #e2e8f0;">
+                                                                                                     {fix}</pre>
                     </div>
                     """
                 html += "</div>"
-            
             html += "</div>"
-
         html += """
             </div>
         </body>
         </html>
         """
         return html
-
 class FixGenerator:
     def generate(self, report: Dict[str, Any]) -> str:
-        """
-        Extracts remediation SQL from the AI analysis and generates a consolidated SQL script.
-        """
         ai_analysis = report.get("ai_analysis", {})
         fixes = ai_analysis.get("fixes", {})
-        
         if not fixes:
             return "-- No automated fixes generated by AI."
-            
         timestamp = datetime.now().isoformat()
         sql_content = f"""/*
 Supabase Security Fix Script
-Generated by SSF on {timestamp}
+Generated by SSF on 
+                    {timestamp}
 WARNING: Review all commands before executing!
 This script is wrapped in a transaction to ensure atomicity.
 */
-
 BEGIN;
-
 """
-    
         order = ["auth", "rls", "rpc", "realtime"]
-        
         for category in order:
             if category in fixes:
                 sql_content += f"\\n/* --- {category.upper()} FIXES --- */\\n"
                 sql_content += fixes[category] + "\\n"
-    
         for category, sql in fixes.items():
             if category not in order:
                 sql_content += f"\\n/* --- {category.upper()} FIXES --- */\\n"
                 sql_content += sql + "\\n"
-        
         sql_content += "\\nCOMMIT;\\n"
-        
         return sql_content

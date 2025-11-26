@@ -29,40 +29,26 @@ def generate_smart_payload(columns: Dict[str, str]) -> Dict[str, Any]:
             else:
                 payload[col_name] = "audit_test"
     return payload
-
 import os
-
 def get_code_files(path: str) -> Dict[str, str]:
-    """
-    Recursively reads code files from a directory or a single file.
-    Ignores common non-code directories.
-    """
     code_files = {}
-    
     if os.path.isfile(path):
         try:
             with open(path, "r", encoding="utf-8") as f:
                 code_files[os.path.basename(path)] = f.read()
         except Exception: pass
         return code_files
-
     ignore_dirs = {".git", "node_modules", "__pycache__", ".venv", "dist", "build", ".next", ".nuxt"}
     extensions = {".sql", ".js", ".ts", ".jsx", ".tsx", ".py", ".json", ".toml"}
-    
     for root, dirs, files in os.walk(path):
-
         dirs[:] = [d for d in dirs if d not in ignore_dirs]
-        
         for file in files:
             if any(file.endswith(ext) for ext in extensions):
                 full_path = os.path.join(root, file)
                 try:
-     
                     if os.path.getsize(full_path) < 100 * 1024: 
                         with open(full_path, "r", encoding="utf-8") as f:
-   
                             rel_path = os.path.relpath(full_path, path)
                             code_files[rel_path] = f.read()
                 except Exception: pass
-                
     return code_files
