@@ -72,6 +72,25 @@ Generate a SQL script to fix identified vulnerabilities:
 python3 ssf.py <URL> <KEY> --agent "KEY" --gen-fixes
 ```
 
+### 🎭 Multi-Role Testing
+Test for vertical escalation by providing multiple role tokens:
+```bash
+# roles.json: {"user1": "eyJ...", "admin": "eyJ..."}
+python3 ssf.py <URL> <KEY> --roles roles.json
+```
+
+### 🤖 Automated Threat Modeling
+Generate a comprehensive threat model (DFD, Attack Paths) using AI:
+```bash
+python3 ssf.py <URL> <KEY> --agent "KEY" --threat-model
+```
+
+### ✅ Advanced Risk Acceptance
+Verify if accepted risks have been remediated and update the knowledge base:
+```bash
+python3 ssf.py <URL> <KEY> --knowledge risks.json --verify-fix
+```
+
 ## 📊 Sample Output
 
 ```text
@@ -111,6 +130,9 @@ python3 ssf.py <URL> <KEY> --agent "KEY" --gen-fixes
 | `--gen-fixes` | Generate SQL fix script from AI analysis |
 | `--analyze <PATH>` | Perform static analysis on local code files |
 | `--edge_rpc <FILE>`| Custom wordlist for Edge Functions |
+| `--roles <FILE>` | JSON file with role tokens for vertical escalation testing |
+| `--threat-model` | Generate Automated Threat Model (requires --agent) |
+| `--verify-fix` | Verify remediation of accepted risks |
 | `--compile` | Compile tool to standalone executable |
 | `--verbose` | Enable debug logging |
 
