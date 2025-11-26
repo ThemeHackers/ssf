@@ -1,44 +1,37 @@
 # Supabase Security Framework (ssf) v4.0
 
-![Banner](https://img.shields.io/badge/Supabase-Security-green) ![Python](https://img.shields.io/badge/Python-3.10%2B-blue) ![License](https://img.shields.io/badge/License-MIT-yellow)
+![Banner](https://img.shields.io/badge/Supabase-Security-green) ![Python](https://img.shields.io/badge/Python-3.10%2B-blue) ![License](https://img.shields.io/badge/License-MIT-yellow) ![Status](https://img.shields.io/badge/Maintained-Yes-brightgreen)
 
-**ssf** is an enterprise-grade, asynchronous security auditing framework for Supabase projects. It proactively identifies misconfigurations, exposed data, and insecure functions before attackers can exploit them.
+**ssf** is an enterprise-grade, asynchronous security auditing framework for Supabase projects. It goes beyond simple configuration checks to **actively test** for vulnerabilities like SQL Injection, IDOR, and Information Leakage.
 
-## 🚀 Key Features
+## 🌟 Why ssf?
 
-- **🛡️ Comprehensive Scanning**:
-    - **RLS Analysis**: Detects tables with missing or permissive Row Level Security policies.
-    - **Auth Leaks**: Identifies public tables exposing user data (PII).
-    - **RPC Security**: Enumerates and tests executable Remote Procedure Calls.
-    - **Storage Buckets**: Checks for public write access and listing capabilities.
-    - **Realtime Channels**: Detects open WebSocket channels broadcasting sensitive events.
-    - **Edge Functions**: Enumerates public Edge Functions.
-    - **GraphQL**: Checks for introspection leaks.
+- **🛡️ Active Verification**: Don't just guess; verify. `ssf` attempts safe exploits (e.g., time-based SQLi) to confirm risks.
+- **🤖 AI-Powered Context**: Integrates with **Google Gemini** to understand *your* specific schema and business logic for deeper insights.
+- **⚙️ CI/CD Ready**: JSON output and diffing capabilities (`--diff`) make it perfect for automated security pipelines.
+- **🧠 Smart Fuzzing**: Uses context-aware payloads to detect hidden data leaks in RPCs.
 
-- **🤖 AI-Powered Assessment**:
-    - Integrates with **Google Gemini 1.5 Pro** (8k context).
-    - Provides **Business Impact Analysis**, **Technical Risk Assessment**, and **Step-by-Step Remediation**.
-    - Injects a specialized **Supabase Security Knowledge Base** for context-aware advice.
+## ⚡ Key Capabilities
 
-- **🧠 Knowledge Framework**:
-    - Define **Accepted Risks** via a JSON file (`--knowledge`).
-    - Automatically filters known safe findings from reports.
-
-- **📊 Enterprise Reporting**:
-    - **HTML Reports**: Beautiful, interactive dashboards.
-    - **JSON Reports**: Machine-readable output for CI/CD.
-    - **Diff Engine**: Compare scans to detect regressions (`--diff`).
-    - **Structured Console Output**: Clean, professional terminal UI.
+| Feature | Description |
+| :--- | :--- |
+| **RLS Analysis** | Detects tables with missing or permissive Row Level Security policies. |
+| **Auth Leaks** | Identifies public tables exposing user data (PII). |
+| **RPC Security** | Enumerates and **fuzzes** executable Remote Procedure Calls for SQLi and leaks. |
+| **Storage Buckets** | Checks for public write access and listing capabilities. |
+| **Realtime Channels** | Detects open WebSocket channels broadcasting sensitive events. |
+| **Edge Functions** | Enumerates public Edge Functions. |
+| **GraphQL** | Checks for introspection leaks. |
 
 ## 📦 Installation
 
-1. Clone the repository:
+1. **Clone the repository**:
    ```bash
    git clone https://github.com/yourusername/supa-sniffer.git
    cd supa-sniffer
    ```
 
-2. Install dependencies:
+2. **Install dependencies**:
    ```bash
    pip install -r requirements.txt
    ```
@@ -57,32 +50,45 @@ python3 ssf.py <URL> <KEY> --agent "YOUR_GEMINI_API_KEY" --brute --html --json
 ```
 
 ### Continuous Integration (CI) Mode
-Compare current results with a previous baseline to block regressions:
+Block regressions by comparing against a baseline:
 ```bash
-
+# 1. Generate baseline
 python3 ssf.py <URL> <KEY> --json > baseline.json
 
-
+# 2. Compare in CI
 python3 ssf.py <URL> <KEY> --json --diff baseline.json
 ```
 
-### Managing Accepted Risks
-Create a `knowledge.json` file to ignore known safe patterns:
-```json
-{
-  "accepted_risks": [
-    {
-      "pattern": "public_stats",
-      "type": "rls",
-      "reason": "Intentionally public dashboard data"
-    }
-  ]
-}
-```
-Run with:
+### 🧠 Static Code Analysis
+Scan your local source code for Supabase-specific vulnerabilities (e.g., hardcoded keys, weak RLS definitions in migrations):
 ```bash
-python3 ssf.py <URL> <KEY> --knowledge knowledge.json
+python3 ssf.py <URL> <KEY> --agent "KEY" --analyze ./supabase/migrations
 ```
+
+### 🛠️ Automated Remediation
+Generate a SQL script to fix identified vulnerabilities:
+```bash
+python3 ssf.py <URL> <KEY> --agent "KEY" --gen-fixes
+```
+
+## 📊 Sample Output
+
+```text
+[*] Testing RPC: get_user_data
+    [!] DATA LEAK via RPC 'get_user_data' → 5 rows
+    [!] Potential SQL Injection in get_user_data (param: id) - Verifying...
+    [!!!] CONFIRMED Time-Based SQL Injection in get_user_data (5.02s)
+```
+
+## 🛡️ Security & Liability
+
+> [!WARNING]
+> **Active Testing Warning**: This tool performs active exploitation verification (e.g., SQL Injection fuzzing, RPC execution).
+
+- **Authorized Use Only**: You must have explicit permission to scan the target.
+- **Data Privacy**: Using `--agent` sends scan summaries to Google Gemini.
+
+👉 **Read our full [Security Policy](SECURITY.md) before use.**
 
 ## 📝 Arguments
 
@@ -96,8 +102,15 @@ python3 ssf.py <URL> <KEY> --knowledge knowledge.json
 | `--json` | Save raw results to JSON |
 | `--diff <FILE>` | Compare current scan vs previous JSON report |
 | `--knowledge <FILE>` | Path to accepted risks JSON file |
+| `--ci` | Exit with non-zero code on critical issues (for CI/CD) |
+| `--proxy <URL>` | Route traffic through an HTTP proxy |
+| `--exploit` | **DANGER**: Auto-run generated exploits |
+| `--gen-fixes` | Generate SQL fix script from AI analysis |
+| `--analyze <PATH>` | Perform static analysis on local code files |
+| `--edge_rpc <FILE>`| Custom wordlist for Edge Functions |
+| `--compile` | Compile tool to standalone executable |
 | `--verbose` | Enable debug logging |
 
 ## ⚠️ Disclaimer
 
-This tool is for **authorized security auditing only**. Usage against targets without prior mutual consent is illegal. The developers assume no liability and are not responsible for any misuse or damage caused by this program.
+The developers assume no liability and are not responsible for any misuse or damage caused by this program. Use responsibly.

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import asyncio
 import argparse
 import json
@@ -22,13 +24,22 @@ from scanners.graphql import GraphQLScanner
 from scanners.functions import EdgeFunctionScanner
 from scanners.realtime import RealtimeScanner
 from core.diff import DiffEngine
-from core.report import HTMLReporter
+from core.report import HTMLReporter, FixGenerator
 from core.banner import show_banner
+from core.exploit import run_exploit
 
 console = Console()
 
 async def main():
     show_banner(console)
+    
+    import sys
+    if "--compile" in sys.argv:
+        from core.compiler import Compiler
+        compiler = Compiler()
+        compiler.compile()
+        return
+
     parser = argparse.ArgumentParser(description="Supabase Audit Framework v1.0")
     parser.add_argument("url", help="Target URL")
     parser.add_argument("key", help="Anon Key")
@@ -40,9 +51,67 @@ async def main():
     parser.add_argument("--html", action="store_true", help="Generate HTML report")
     parser.add_argument("--knowledge", help="Path to knowledge base JSON file")
     parser.add_argument("--ci", action="store_true", help="Exit with non-zero code on critical issues (for CI/CD)")
+    parser.add_argument("--proxy", help="Proxy URL (e.g., http://127.0.0.1:8080)", default=None)
+    parser.add_argument("--exploit", action="store_true", help="Automatically run generated exploits")
+    parser.add_argument("--gen-fixes", action="store_true", help="Generate SQL fix script from AI analysis")
+    parser.add_argument("--analyze", help="Path to file or directory for Static Code Analysis")
+    parser.add_argument("--edge_rpc", help="Path to custom Edge Function wordlist file")
+    parser.add_argument("--compile", action="store_true", help="Compile to standalone executable")
     args = parser.parse_args()
 
-    config = TargetConfig(url=args.url, key=args.key, gemini_key=args.agent, verbose=args.verbose)
+    if args.compile:
+        # Already handled above, but kept for argparse help message consistency
+        return
+
+    config = TargetConfig(url=args.url, key=args.key, gemini_key=args.agent, verbose=args.verbose, proxy=args.proxy)
+
+
+    if args.analyze:
+        if not config.has_ai:
+            console.print("[bold red][!] --analyze requires --agent (AI) to be enabled.[/]")
+            return
+
+        from core.utils import get_code_files
+        console.print(f"[cyan][*] Reading code files from: {args.analyze}[/]")
+        code_files = get_code_files(args.analyze)
+        
+        if not code_files:
+            console.print("[yellow][!] No supported code files found.[/]")
+            return
+            
+        console.print(f"[green][+] Found {len(code_files)} files to analyze.[/]")
+        
+        agent = AIAgent(config.gemini_key)
+        
+
+        ai_text = Markdown("")
+        panel = Panel(ai_text, title="🤖 AI Analyzing Code...", border_style="magenta")
+        
+        full_ai_response = ""
+        def update_ai_output_markdown(chunk):
+            nonlocal full_ai_response
+            full_ai_response += chunk
+            panel.renderable = Markdown(full_ai_response)
+            
+        from rich.live import Live
+        with Live(panel, refresh_per_second=8, console=console, auto_refresh=True):
+             report = await agent.analyze_code(code_files, stream_callback=update_ai_output_markdown)
+        
+        if "error" not in report:
+            console.print(Panel(Markdown(f"### Code Risk: {report.get('risk_level')}\n\n{report.get('summary')}"), title="🤖 Static Analysis Results", border_style="magenta"))
+
+            import os
+            timestamp = int(time.time())
+            output_dir = f"audit_report_{timestamp}"
+            os.makedirs(output_dir, exist_ok=True)
+            
+            filename = os.path.join(output_dir, f"code_analysis_{timestamp}.json")
+            with open(filename, "w", encoding="utf-8") as f:
+                json.dump(report, f, indent=2)
+            console.print(f"\n[bold green]✔ Code Analysis Report saved: {filename}[/]")
+            
+        return 
+
     full_report = {"target": config.url, "timestamp": datetime.now().isoformat(), "findings": {}}
 
     
@@ -79,7 +148,26 @@ async def main():
         storage_scanner = StorageScanner(client, verbose=config.verbose, context=shared_context)
         brute_scanner = BruteScanner(client, verbose=config.verbose, context=shared_context)
         graphql_scanner = GraphQLScanner(client, verbose=config.verbose, context=shared_context)
-        function_scanner = EdgeFunctionScanner(client, verbose=config.verbose, context=shared_context)
+
+        custom_functions = []
+        import os
+        
+        edge_list_file = args.edge_rpc if args.edge_rpc else "edge_name.txt"
+        
+        should_load = args.edge_rpc or os.path.exists("edge_name.txt")
+        
+        if should_load and os.path.exists(edge_list_file):
+            console.print(f"[cyan][*] Loading custom edge function list from {edge_list_file}...[/]")
+            try:
+                with open(edge_list_file, "r") as f:
+                    custom_functions = [line.strip() for line in f if line.strip()]
+                console.print(f"    [+] Loaded {len(custom_functions)} custom function names.", style="green")
+            except Exception as e:
+                console.print(f"    [red][!] Failed to load {edge_list_file}: {e}[/]")
+        elif args.edge_rpc:
+             console.print(f"[red][!] Custom wordlist file not found: {edge_list_file}[/]")
+
+        function_scanner = EdgeFunctionScanner(client, verbose=config.verbose, context=shared_context, custom_list=custom_functions)
         realtime_scanner = RealtimeScanner(client, verbose=config.verbose, context=shared_context)
 
         MAX_CONCURRENT_REQUESTS = 20
@@ -155,6 +243,18 @@ async def main():
         console.print(Panel(f"Status: {auth_status}\n{auth_details}", title="[bold]Authentication[/]", border_style="red" if res_auth["leaked"] else "green"))
 
 
+        crit_rls = len([r for r in res_rls if r["risk"] == "CRITICAL"])
+        high_rls = len([r for r in res_rls if r["risk"] == "HIGH"])
+        vuln_rpcs = len([r for r in res_rpc if r.get("sqli_suspected") or r.get("risk") == "CRITICAL"])
+        open_chans = len(res_realtime["channels"])
+        
+        scorecard = f"""
+        [bold red]CRITICAL RLS:[/bold red] {crit_rls}   [bold yellow]HIGH RLS:[/bold yellow] {high_rls}
+        [bold red]VULN RPCs:[/bold red]    {vuln_rpcs}   [bold red]AUTH LEAK:[/bold red] {res_auth['leaked']}
+        [bold yellow]OPEN CHANNELS:[/bold yellow] {open_chans}
+        """
+        console.print(Panel(scorecard, title="[bold]Risk Scorecard[/]", border_style="red" if crit_rls > 0 or vuln_rpcs > 0 else "green"))
+
         t_rls = Table(title="Row Level Security (RLS)", expand=True)
         t_rls.add_column("Table", style="cyan")
         t_rls.add_column("Read", justify="center")
@@ -227,23 +327,43 @@ async def main():
         console.print(Panel(infra_tree, title="[bold]Realtime & Storage[/]", border_style="magenta"))
 
         if config.has_ai:
-            console.print(Panel("[magenta]AI Agent is analyzing...[/]", border_style="magenta"))
+            from rich.live import Live
+            from rich.text import Text
+            
             agent = AIAgent(config.gemini_key)
-            ai_input = {
-                "target": config.url,
-                "auth_leak": res_auth["leaked"],
-                "writable_tables": [x["table"] for x in res_rls if x["write"]],
-                "executable_rpcs": [x["name"] for x in res_rpc if x["executable"]],
-                "hidden_tables": res_brute,
-                "graphql_open": res_graphql["enabled"],
-                "edge_functions": [f["name"] for f in res_functions],
-                "realtime_channels": res_realtime["channels"],
-                "accepted_risks": accepted_risks
-            }
-            report = await agent.analyze_results(ai_input)
+
+            ai_input = full_report["findings"]
+            ai_input["target"] = config.url
+            ai_input["accepted_risks"] = accepted_risks
+            
+
+            ai_text = Markdown("")
+
+            panel = Panel(ai_text, title="🤖 AI Agent Thinking...", border_style="magenta")
+            
+            def update_ai_output(chunk):
+              
+                nonlocal ai_text
+               
+                pass 
+            full_ai_response = ""
+            def update_ai_output_markdown(chunk):
+                nonlocal full_ai_response
+                full_ai_response += chunk
+                panel.renderable = Markdown(full_ai_response)
+            
+            console.print(Panel("[magenta]Connecting to AI Agent...[/]", border_style="magenta"))
+            
+            with Live(panel, refresh_per_second=8, console=console, auto_refresh=True):
+                 report = await agent.analyze_results(ai_input, stream_callback=update_ai_output_markdown)
+            
             if "error" not in report:
                 console.print(Panel(Markdown(f"### AI Risk: {report.get('risk_level')}\n\n{report.get('summary')}"), title="🤖 AI Security Assessment", border_style="magenta"))
                 full_report["ai_analysis"] = report
+
+        if args.exploit:
+            console.print("\n[bold yellow][*] Running Exploit Module...[/]")
+            await run_exploit(auto_confirm=True)
 
 
         diff_results = None
@@ -251,8 +371,13 @@ async def main():
             try:
                 with open(args.diff, "r", encoding="utf-8") as f:
                     prev_report = json.load(f)
-                diff_engine = DiffEngine()
-                diff_results = diff_engine.compare(full_report, prev_report)
+                
+                if not isinstance(prev_report, dict):
+                    console.print("[red]Error: Diff file must contain a JSON object (dictionary), not a list or other type.[/]")
+                    diff_results = None
+                else:
+                    diff_engine = DiffEngine()
+                    diff_results = diff_engine.compare(full_report, prev_report)
                 
                 console.print("\n")
                 console.rule("[bold cyan]Comparison Results[/]")
@@ -265,19 +390,35 @@ async def main():
             except Exception as e:
                 console.print(f"[red]Error loading diff file: {e}[/]")
 
+        import os
+        timestamp = int(time.time())
+        output_dir = f"audit_report_{timestamp}"
+        os.makedirs(output_dir, exist_ok=True)
+
         if args.json:
-            filename = f"audit_report_{int(time.time())}.json"
+            filename = os.path.join(output_dir, f"audit_report_{timestamp}.json")
             with open(filename, "w", encoding="utf-8") as f:
                 json.dump(full_report, f, indent=2)
+            
             console.print(f"\n[bold green]✔ JSON Report saved: {filename}[/]")
 
         if args.html:
             html_reporter = HTMLReporter()
             html_content = html_reporter.generate(full_report, diff_results)
-            html_filename = f"audit_report_{int(time.time())}.html"
+            html_filename = os.path.join(output_dir, f"audit_report_{timestamp}.html")
             with open(html_filename, "w", encoding="utf-8") as f:
                 f.write(html_content)
             console.print(f"[bold green]✔ HTML Report saved: {html_filename}[/]")
+
+        if args.gen_fixes and config.has_ai and "ai_analysis" in full_report:
+            fix_gen = FixGenerator()
+            sql_fixes = fix_gen.generate(full_report)
+            fix_filename = os.path.join(output_dir, f"fixes_{timestamp}.sql")
+            with open(fix_filename, "w", encoding="utf-8") as f:
+                f.write(sql_fixes)
+            console.print(f"\n[bold green]✔ SQL Fix Script saved: {fix_filename}[/]")
+        elif args.gen_fixes and not config.has_ai:
+            console.print("\n[bold yellow][!] --gen-fixes requires --agent (AI) to be enabled.[/]")
 
         if args.ci:
             failure_reasons = []
