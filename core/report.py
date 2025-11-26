@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 from typing import Dict, Any
+
 VULN_TO_COMPLIANCE = {
     "rls": {
         "OWASP": "API1:2023 (BOLA)",
@@ -19,6 +20,7 @@ VULN_TO_COMPLIANCE = {
         "SOC2": "CC6.1 (Access Control)"
     }
 }
+
 class HTMLReporter:
     def generate(self, report: Dict[str, Any], diff: Dict[str, Any] = None) -> str:
         findings = report.get("findings", {})
@@ -442,3 +444,4 @@ BEGIN;
                 sql_content += sql + "\\n"
         sql_content += "\\nCOMMIT;\\n"
         return sql_content
+        
