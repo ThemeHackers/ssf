@@ -3,8 +3,10 @@ from typing import Dict, Any
 import time
 from core.base import BaseScanner
 from core.utils import generate_smart_payload
-
 class RLSScanner(BaseScanner):
+    def __init__(self, client: httpx.AsyncClient, verbose: bool = False, context: Dict[str, Any] = None, tokens: Dict[str, str] = None):
+        super().__init__(client, verbose, context)
+        self.tokens = tokens or {}
     async def scan(self, table: str, table_info: Dict[str, Any]) -> Dict[str, Any]:
         columns = table_info.get("columns", {})
         pk_col = table_info.get("pk", "id")
@@ -35,7 +37,6 @@ class RLSScanner(BaseScanner):
             if discovered_users:
                 self.log(f"    [*] Testing Horizontal Escalation with {len(discovered_users)} leaked IDs...", "cyan")
                 for uid in discovered_users[:3]: 
-                
                     target_cols = [c for c in columns.keys() if any(x in c.lower() for x in ["user", "owner", "auth", "id"])]
                     if not target_cols:
                         target_cols = ["user_id", "owner", "author_id", "id"]
@@ -53,25 +54,21 @@ class RLSScanner(BaseScanner):
                                         break 
                             except Exception as e:
                                 self.log_error(e)
-            
             await self._check_blind_rls(table, pk_col, result)
-
+            if self.tokens:
+                await self._check_vertical_escalation(table, endpoint, result)
         except Exception as e:
             self.log_error(e)
-
-        
         try:
             payload = generate_smart_payload(columns)            
             patch_endpoint = f"{endpoint}?{pk_col}=eq.0" 
             r = await self.client.patch(patch_endpoint, json=payload, headers={"Prefer": "return=representation"})
             if r.status_code in [200, 204, 404]:
-
                  if r.status_code != 404:
                      result["write"] = True
                      self.log(f"    [!] UPDATE (PATCH) access confirmed for {table}", "bold red")
         except Exception as e:
             self.log_error(e)
-
         try:
              delete_endpoint = f"{endpoint}?{pk_col}=eq.0"
              r = await self.client.delete(delete_endpoint, headers={"Prefer": "return=representation"})
@@ -81,7 +78,6 @@ class RLSScanner(BaseScanner):
                      self.log(f"    [!] DELETE access confirmed for {table}", "bold red")
         except Exception as e:
             self.log_error(e)
-
         try:
             payload = generate_smart_payload(columns)
             r = await self.client.post(endpoint, json=payload, headers={"Prefer": "return=representation"})
@@ -107,48 +103,39 @@ class RLSScanner(BaseScanner):
         elif result["read"]:
             result["risk"] = "HIGH" if any(x in table for x in ["user", "secret", "admin", "key"]) else "MEDIUM"
         return result
-
     async def _check_blind_rls(self, table: str, pk_col: str, result: Dict[str, Any]):
-        """
-        Checks for Blind RLS by attempting to induce side-effects (timing) 
-        or error messages that reveal row existence.
-        """
         self.log(f"    [*] Testing Blind RLS on {table}...", "cyan")
         endpoint = f"/rest/v1/{table}"
-        
-        # Method 1: Error-based (if casting fails on existing rows but not on filtered out rows)
         try:
-            # Try to cast PK to an invalid type. If RLS hides the row, we might get an empty response (200 OK [])
-            # If RLS allows access but casting fails, we might get 400 Bad Request.
-            # This is highly dependent on the DB setup, but worth a try.
             params = {pk_col: "eq.1", "select": f"{pk_col}::text"} 
-            # This is just a placeholder for now as error-based is noisy.
             pass
         except: pass
-
-        # Method 2: Timing-based (Resource Intensive)
-        # We try to filter by a column and use a resource intensive operation.
-        # If RLS hides the row, the operation shouldn't run (or runs faster).
         try:
-            # Baseline request (non-existent row)
             start_time = time.time()
-            # Use a PK that likely doesn't exist or a filter that returns nothing
             params = {pk_col: "eq.0"} 
             await self.client.get(endpoint, params=params)
             baseline = time.time() - start_time
-            
-            # Target request (potentially existing row)
-            # We use a known ID or guess one (like 1)
             start_time = time.time()
             params = {pk_col: "eq.1"}
             await self.client.get(endpoint, params=params)
             target_time = time.time() - start_time
-
-            # If target takes significantly longer (e.g. 5x baseline), it might indicate processing happened
-            # This is very rough and prone to network jitter.
             if target_time > (baseline * 5) and target_time > 0.5:
                  self.log(f"    [?] Possible Blind RLS (Timing) on {table} (Baseline: {baseline:.2f}s, Target: {target_time:.2f}s)", "yellow")
-                 # We don't mark as CRITICAL automatically to avoid false positives, but we flag it.
                  if result["risk"] == "SAFE":
                      result["risk"] = "LOW"
         except: pass
+    async def _check_vertical_escalation(self, table: str, endpoint: str, result: Dict[str, Any]):
+        self.log(f"    [*] Testing Vertical Escalation on {table} with {len(self.tokens)} roles...", "cyan")
+        for role, token in self.tokens.items():
+            headers = {"Authorization": f"Bearer {token}", "Prefer": "count=exact"}
+            try:
+                r = await self.client.get(endpoint, params={"limit": 1}, headers=headers)
+                can_read = r.status_code in [200, 206]
+                if can_read:
+                    count = r.headers.get("content-range", "unknown").split("/")[-1]
+                    self.log(f"        [+] Role '{role}' can READ {table} (Rows: {count})", "green")
+                    if not result["read"]:
+                        self.log(f"        [!] Vertical Escalation: Role '{role}' has READ access (Anon does not)", "yellow")
+                        result.setdefault("escalation", []).append(f"{role}:READ")
+            except Exception as e:
+                self.log_error(e)

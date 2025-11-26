@@ -23,19 +23,14 @@ class GraphQLScanner(BaseScanner):
                 self.log("    [!] GraphQL Introspection is ENABLED!", "bold yellow")
         except Exception as e:
             self.log_error(e)
-            
         if result["enabled"]:
             await self._test_query_depth(result)
             await self._test_field_fuzzing(result)
-            
         return result
-
     async def _test_query_depth(self, result: Dict):
         self.log("    [*] Testing GraphQL Query Depth...", "cyan")
         depth = 10
         query = "query { __schema { types { " * depth + "name" + " } } }" * depth + " }" * depth
-
-        
         deep_query = """
         query {
           __schema {
@@ -65,7 +60,6 @@ class GraphQLScanner(BaseScanner):
                 result["details"] += " | Deep Query Allowed"
         except Exception as e:
             self.log_error(e)
-
     async def _test_field_fuzzing(self, result: Dict):
         self.log("    [*] Testing GraphQL Field Fuzzing...", "cyan")
         fuzz_query = """

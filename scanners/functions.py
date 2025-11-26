@@ -2,7 +2,6 @@ import asyncio
 from typing import List, Dict
 from core.base import BaseScanner
 from core.config import Wordlists
-
 class EdgeFunctionScanner(BaseScanner):
     def __init__(self, client, verbose=False, context=None, custom_list=None):
         super().__init__(client, verbose, context)

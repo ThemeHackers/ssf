@@ -10,13 +10,11 @@ class RealtimeScanner(BaseScanner):
         ws_url = f"wss://{base_host}/realtime/v1/websocket?apikey={self.client.headers.get('apikey')}&vsn=1.0.0"
         result = {"connected": False, "channels": [], "risk": "SAFE"}
         channels_to_test = ["realtime:*", "*", "public:*", "room:*"]
-        
         risky_tables = [t["table"] for t in self.context.get("rls_findings", []) if t.get("risk") in ["CRITICAL", "HIGH"]]
         for table in risky_tables:
             channels_to_test.append(f"realtime:{table}")
             channels_to_test.append(f"{table}")
             channels_to_test.append(f"public:{table}")
-            
         self.log(f"    [*] Testing {len(channels_to_test)} channels (including {len(risky_tables)} dynamic targets)...", "cyan")
         try:
             async with websockets.connect(ws_url) as ws:
