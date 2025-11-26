@@ -1,13 +1,15 @@
 import asyncio
 from typing import List, Dict
 from core.base import BaseScanner
+from core.config import Wordlists
+
 class EdgeFunctionScanner(BaseScanner):
-    def __init__(self, client, verbose=False, context=None):
+    def __init__(self, client, verbose=False, context=None, custom_list=None):
         super().__init__(client, verbose, context)
-        self.common_functions = [
-            "hello", "test", "auth", "user", "payment", "stripe", "webhook", 
-            "email", "send-email", "notify", "openai", "ai", "search", "cron"
-        ]
+        self.common_functions = Wordlists.functions
+        if custom_list:
+            self.common_functions.extend(custom_list)
+            self.common_functions = list(set(self.common_functions))
     async def scan(self) -> List[Dict]:
         self.log("[*] Enumerating Edge Functions...", "cyan")
         tasks = [self._check_function(name) for name in self.common_functions]
@@ -27,6 +29,6 @@ class EdgeFunctionScanner(BaseScanner):
                     "status": r.status_code,
                     "url": url
                 }
-        except:
-            pass
+        except Exception as e:
+            self.log_error(e)
         return None

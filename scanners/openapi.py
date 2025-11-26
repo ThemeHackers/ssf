@@ -8,8 +8,8 @@ class OpenAPIScanner(BaseScanner):
             if resp.status_code == 200:
                 self.log("    [+] Spec found!", "green")
                 return resp.json()
-        except Exception:
-            pass
+        except Exception as e:
+            self.log_error(e)
         return {}
     def parse_tables(self, spec: Dict) -> Dict[str, Dict]:
         tables = {}
