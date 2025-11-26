@@ -41,7 +41,7 @@ async def main():
     parser.add_argument("url", help="Target URL")
     parser.add_argument("key", help="Anon Key")
     parser.add_argument("--agent", help="Gemini API Key", default=None)
-    parser.add_argument("--brute", action="store_true", help="Enable Bruteforce")
+    parser.add_argument("--brute", nargs="?", const="default", help="Enable Bruteforce (optional: path to wordlist)")
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging")
     parser.add_argument("--json", action="store_true", help="Save report to JSON file")
     parser.add_argument("--diff", help="Path to previous JSON report for comparison")
@@ -127,7 +127,7 @@ async def main():
         auth_scanner = AuthScanner(client, verbose=config.verbose, context=shared_context)
         rls_scanner = RLSScanner(client, verbose=config.verbose, context=shared_context, tokens=roles)
         storage_scanner = StorageScanner(client, verbose=config.verbose, context=shared_context)
-        brute_scanner = BruteScanner(client, verbose=config.verbose, context=shared_context)
+        brute_scanner = BruteScanner(client, verbose=config.verbose, context=shared_context, wordlist_path=args.brute)
         graphql_scanner = GraphQLScanner(client, verbose=config.verbose, context=shared_context)
         custom_functions = []
         import os
