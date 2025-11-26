@@ -27,13 +27,13 @@
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/yourusername/supa-sniffer.git
-   cd supa-sniffer
+   git clone https://github.com/ThemeHackers/ssf
+   cd ssf
    ```
 
 2. **Install dependencies**:
    ```bash
-   pip install -r requirements.txt
+   pip3 install -r requirements.txt
    ```
 
 ## 🛠️ Usage
