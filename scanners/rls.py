@@ -116,17 +116,39 @@ class RLSScanner(BaseScanner):
         self.log(f"    [*] Testing Blind RLS on {table}...", "cyan")
         endpoint = f"/rest/v1/{table}"
         
+        # Method 1: Error-based (if casting fails on existing rows but not on filtered out rows)
         try:
+            # Try to cast PK to an invalid type. If RLS hides the row, we might get an empty response (200 OK [])
+            # If RLS allows access but casting fails, we might get 400 Bad Request.
+            # This is highly dependent on the DB setup, but worth a try.
             params = {pk_col: "eq.1", "select": f"{pk_col}::text"} 
-
+            # This is just a placeholder for now as error-based is noisy.
             pass
         except: pass
 
+        # Method 2: Timing-based (Resource Intensive)
+        # We try to filter by a column and use a resource intensive operation.
+        # If RLS hides the row, the operation shouldn't run (or runs faster).
         try:
+            # Baseline request (non-existent row)
             start_time = time.time()
-            params = {pk_col: "eq.1"}
+            # Use a PK that likely doesn't exist or a filter that returns nothing
+            params = {pk_col: "eq.0"} 
             await self.client.get(endpoint, params=params)
             baseline = time.time() - start_time
             
-            pass
+            # Target request (potentially existing row)
+            # We use a known ID or guess one (like 1)
+            start_time = time.time()
+            params = {pk_col: "eq.1"}
+            await self.client.get(endpoint, params=params)
+            target_time = time.time() - start_time
+
+            # If target takes significantly longer (e.g. 5x baseline), it might indicate processing happened
+            # This is very rough and prone to network jitter.
+            if target_time > (baseline * 5) and target_time > 0.5:
+                 self.log(f"    [?] Possible Blind RLS (Timing) on {table} (Baseline: {baseline:.2f}s, Target: {target_time:.2f}s)", "yellow")
+                 # We don't mark as CRITICAL automatically to avoid false positives, but we flag it.
+                 if result["risk"] == "SAFE":
+                     result["risk"] = "LOW"
         except: pass
