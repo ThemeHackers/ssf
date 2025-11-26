@@ -14,7 +14,8 @@ class SessionManager:
             base_url=self.config.url,
             headers=self.headers,
             timeout=self.config.timeout,
-            verify=False
+            verify=False,
+            proxy=self.config.proxy
         )
         return self.client
     async def __aexit__(self, exc_type, exc_val, exc_tb):

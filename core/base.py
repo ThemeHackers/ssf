@@ -19,3 +19,8 @@ class BaseScanner(ABC):
         """Helper for verbose logging"""
         if self.verbose:
             self.console.print(f"[{style}]{message}[/{style}]" if style else message)
+
+    def log_error(self, error: Exception):
+        """Helper for logging errors in verbose mode"""
+        if self.verbose:
+            self.console.print(f"[bold red][!] Error: {error}[/]")

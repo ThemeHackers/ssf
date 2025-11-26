@@ -12,25 +12,40 @@ class HTMLReporter:
         timestamp = report.get("timestamp", datetime.now().isoformat())
         
         css = """
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f9; color: #333; margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        h2 { color: #34495e; margin-top: 30px; }
-        .meta { color: #7f8c8d; font-size: 0.9em; margin-bottom: 20px; }
-        .panel { border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin-bottom: 15px; }
-        .panel.critical { border-left: 5px solid #e74c3c; background: #fdf0ed; }
-        .panel.high { border-left: 5px solid #e67e22; background: #fdf6ed; }
-        .panel.medium { border-left: 5px solid #f1c40f; background: #fcf8e3; }
-        .panel.safe { border-left: 5px solid #2ecc71; background: #f0f9f4; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background-color: #f8f9fa; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; color: white; }
-        .bg-red { background-color: #e74c3c; }
+        :root {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --text-primary: #e94560;
+            --text-secondary: #a2a8d3;
+            --accent: #0f3460;
+            --success: #2ecc71;
+            --warning: #f1c40f;
+            --danger: #e74c3c;
+        }
+        body { font-family: 'Inter', 'Segoe UI', sans-serif; background-color: var(--bg-primary); color: #fff; margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: var(--bg-secondary); padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        h1 { color: var(--text-primary); border-bottom: 2px solid var(--accent); padding-bottom: 15px; margin-bottom: 30px; }
+        h2 { color: var(--text-secondary); margin-top: 40px; border-left: 4px solid var(--text-primary); padding-left: 10px; }
+        .meta { color: #888; font-size: 0.9em; margin-bottom: 30px; background: var(--accent); padding: 15px; border-radius: 6px; }
+        .panel { border: 1px solid var(--accent); border-radius: 8px; padding: 20px; margin-bottom: 20px; background: rgba(255,255,255,0.02); }
+        .panel.critical { border-left: 5px solid var(--danger); background: rgba(231, 76, 60, 0.1); }
+        .panel.high { border-left: 5px solid #e67e22; background: rgba(230, 126, 34, 0.1); }
+        .panel.medium { border-left: 5px solid var(--warning); background: rgba(241, 196, 15, 0.1); }
+        .panel.safe { border-left: 5px solid var(--success); background: rgba(46, 204, 113, 0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid var(--accent); }
+        th { background-color: var(--accent); color: var(--text-secondary); font-weight: 600; }
+        tr:hover { background-color: rgba(255,255,255,0.05); }
+        .badge { padding: 5px 10px; border-radius: 4px; font-size: 0.85em; font-weight: bold; color: white; text-transform: uppercase; }
+        .bg-red { background-color: var(--danger); }
         .bg-orange { background-color: #e67e22; }
-        .bg-yellow { background-color: #f1c40f; color: #333; }
-        .bg-green { background-color: #2ecc71; }
+        .bg-yellow { background-color: var(--warning); color: #333; }
+        .bg-green { background-color: var(--success); }
         .bg-blue { background-color: #3498db; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: var(--accent); padding: 20px; border-radius: 8px; text-align: center; }
+        .stat-value { font-size: 2.5em; font-weight: bold; color: var(--text-primary); }
+        .stat-label { color: var(--text-secondary); font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; }
         """
         
         html = f"""
@@ -46,6 +61,25 @@ class HTMLReporter:
                 <div class="meta">
                     <strong>Target:</strong> {target} | 
                     <strong>Scan Time:</strong> {timestamp}
+                </div>
+                
+                <div class="summary-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">{len([r for r in findings.get('rls', []) if r['risk'] == 'CRITICAL'])}</div>
+                        <div class="stat-label">Critical RLS</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{len([r for r in findings.get('rpc', []) if r.get('risk') == 'CRITICAL'])}</div>
+                        <div class="stat-label">Vuln RPCs</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{'YES' if findings.get('auth', {}).get('leaked') else 'NO'}</div>
+                        <div class="stat-label">Auth Leak</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{len(findings.get('storage', []))}</div>
+                        <div class="stat-label">Buckets</div>
+                    </div>
                 </div>
         """
         
@@ -125,3 +159,43 @@ class HTMLReporter:
         </html>
         """
         return html
+        return html
+
+class FixGenerator:
+    def generate(self, report: Dict[str, Any]) -> str:
+        """
+        Extracts remediation SQL from the AI analysis and generates a consolidated SQL script.
+        """
+        ai_analysis = report.get("ai_analysis", {})
+        fixes = ai_analysis.get("fixes", {})
+        
+        if not fixes:
+            return "-- No automated fixes generated by AI."
+            
+        timestamp = datetime.now().isoformat()
+        sql_content = f"""/*
+Supabase Security Fix Script
+Generated by SSF on {timestamp}
+WARNING: Review all commands before executing!
+This script is wrapped in a transaction to ensure atomicity.
+*/
+
+BEGIN;
+
+"""
+    
+        order = ["auth", "rls", "rpc", "realtime"]
+        
+        for category in order:
+            if category in fixes:
+                sql_content += f"\n/* --- {category.upper()} FIXES --- */\n"
+                sql_content += fixes[category] + "\n"
+    
+        for category, sql in fixes.items():
+            if category not in order:
+                sql_content += f"\n/* --- {category.upper()} FIXES --- */\n"
+                sql_content += sql + "\n"
+        
+        sql_content += "\nCOMMIT;\n"
+        
+        return sql_content
