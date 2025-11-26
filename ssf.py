@@ -59,6 +59,7 @@ async def main():
     parser.add_argument("--threat-model", action="store_true", help="Generate Automated Threat Model (requires --agent)")
     parser.add_argument("--verify-fix", action="store_true", help="Verify remediation of accepted risks and update Knowledge Base")
     parser.add_argument("--compile", action="store_true", help="Compile to standalone executable")
+    parser.add_argument("--dump-all", action="store_true", help="Dump all rows found in RLS scan (default: limit 5)")
     args = parser.parse_args()
     if args.compile:
         return
@@ -125,7 +126,7 @@ async def main():
             except Exception as e:
                 console.print(f"[red][!] Failed to load roles: {e}[/]")
         auth_scanner = AuthScanner(client, verbose=config.verbose, context=shared_context)
-        rls_scanner = RLSScanner(client, verbose=config.verbose, context=shared_context, tokens=roles)
+        rls_scanner = RLSScanner(client, verbose=config.verbose, context=shared_context, tokens=roles, dump_all=args.dump_all)
         storage_scanner = StorageScanner(client, verbose=config.verbose, context=shared_context)
         brute_scanner = BruteScanner(client, verbose=config.verbose, context=shared_context, wordlist_path=args.brute)
         graphql_scanner = GraphQLScanner(client, verbose=config.verbose, context=shared_context)
