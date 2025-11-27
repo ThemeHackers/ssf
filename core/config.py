@@ -12,6 +12,9 @@ class TargetConfig(BaseModel):
     verbose: bool = False
     sniff_duration: Optional[int] = Field(default=None)
     check_config: bool = False
+    random_agent: bool = False
+    level: int = 1
+    tamper: Optional[str] = Field(default=None)
     @property
     def has_ai(self) -> bool:
         return bool(self.ai_key)
