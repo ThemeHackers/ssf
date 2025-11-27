@@ -40,6 +40,40 @@ class DatabaseConfigurationScanner(BaseScanner):
             if "Content-Range" in r.headers:
                 pass
         except: pass
+
+        if self.client.config.check_config:
+            self.log("[*] Checking PostgREST max_rows configuration...", "cyan")
+            # Try to find a valid table to query
+            target_table = None
+            if result["exposed_system_tables"]:
+                target_table = result["exposed_system_tables"][0]
+            elif self.context.get("rls_findings"):
+                 # Use a table found during RLS scan that is readable
+                 for finding in self.context.get("rls_findings"):
+                     if finding.get("read"):
+                         target_table = finding.get("table")
+                         break
+            
+            if target_table:
+                try:
+                    # Request a large number of rows
+                    limit = 10000
+                    self.log(f"    [*] Testing max_rows on table '{target_table}' with limit={limit}...", "cyan")
+                    r = await self.client.get(f"/rest/v1/{target_table}", params={"select": "*", "limit": limit})
+                    if r.status_code == 200:
+                        rows = r.json()
+                        count = len(rows)
+                        if count >= limit:
+                            self.log(f"    [!] HIGH RISK: max_rows seems very high or unlimited! (Returned {count} rows)", "bold red")
+                            result["config_issues"].append(f"Potential DoS: max_rows >= {limit}")
+                        else:
+                            self.log(f"    [+] max_rows check: SAFE. Returned {count} rows (Limit request: {limit})", "green")
+                    else:
+                        self.log(f"    [!] max_rows check failed: HTTP {r.status_code}", "yellow")
+                except Exception as e:
+                    self.log_error(e)
+            else:
+                self.log("    [!] Skipping max_rows check: No readable table found to test against.", "yellow")
         if result["exposed_system_tables"]:
             result["inferred_privileges"].append("Possible Superuser/High Privilege (System Tables Exposed)")
         return result
