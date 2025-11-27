@@ -1,9 +1,17 @@
 from typing import List, Dict, Any
 from core.base import BaseScanner
+import httpx
 import json
 import time
+import csv
+import os
+from datetime import datetime
 from core.utils import generate_smart_payload
 class RPCScanner(BaseScanner):
+    def __init__(self, client: httpx.AsyncClient, verbose: bool = False, context: Dict[str, Any] = None, dump_all: bool = False):
+        super().__init__(client, verbose, context)
+        self.dump_all = dump_all
+
     def extract_rpcs(self, spec: Dict) -> List[Dict]:
         rpcs = []
         if not spec or "paths" not in spec: return rpcs
@@ -92,6 +100,25 @@ class RPCScanner(BaseScanner):
                         result["leaked_data"] = True
                         result["sample_rows"] = data[:5] if isinstance(data, list) else [data]
                         self.log(f"[!] DATA LEAK via RPC '{rpc['name']}' → {len(data) if isinstance(data,list) else 1} rows", "bold red")
+                        
+                        if self.dump_all:
+                            try:
+                                dump_dir = "dumps"
+                                os.makedirs(dump_dir, exist_ok=True)
+                                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                                filename = f"{dump_dir}/rpc_{rpc['name']}_{timestamp}.csv"
+                                
+                                rows_to_dump = data if isinstance(data, list) else [data]
+                                if rows_to_dump:
+                                    keys = rows_to_dump[0].keys()
+                                    with open(filename, "w", newline="", encoding="utf-8") as f:
+                                        writer = csv.DictWriter(f, fieldnames=keys)
+                                        writer.writeheader()
+                                        writer.writerows(rows_to_dump)
+                                    self.log(f"    [+] Data dumped to {filename}", "green")
+                            except Exception as e:
+                                self.log_warn(f"    [!] Failed to dump CSV: {e}")
+
                         self.context.setdefault("leaked_via_rpc", []).append({"rpc": rpc['name'], "sample": result["sample_rows"]})
                         sample_str = json.dumps(result["sample_rows"])
                         if "rolname" in sample_str or "pg_authid" in sample_str or "passwd" in sample_str:
