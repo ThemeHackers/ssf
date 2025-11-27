@@ -21,8 +21,11 @@ class RLSScanner(BaseScanner):
         result = {"table": table, "read": False, "write": False, "risk": "SAFE"}
         
         try:
-            limit = 10000 if self.dump_all else 5
-            r = await self.client.get(endpoint, params={"limit": limit}, headers={"Prefer": "count=exact"})
+            params = {"limit": 5}
+            if self.dump_all:
+                params = {} 
+            
+            r = await self.client.get(endpoint, params=params, headers={"Prefer": "count=exact"})
             if r.status_code in [200, 206]:
                 result["read"] = True
                 count = r.headers.get("content-range", "unknown").split("/")[-1]
