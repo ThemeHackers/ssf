@@ -112,7 +112,7 @@ async def main():
             openapi = OpenAPIScanner(client, verbose=config.verbose, context=shared_context)
             spec = await openapi.scan()
             tables = openapi.parse_tables(spec)
-            rpc_scanner = RPCScanner(client, verbose=config.verbose, context=shared_context)
+            rpc_scanner = RPCScanner(client, verbose=config.verbose, context=shared_context, dump_all=args.dump_all)
             rpcs = rpc_scanner.extract_rpcs(spec)
             p.update(t1, completed=1)
         console.print(f"[+] Found {len(tables)} tables, {len(rpcs)} RPCs.")
