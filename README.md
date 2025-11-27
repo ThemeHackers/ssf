@@ -50,7 +50,9 @@ python3 ssf.py <SUPABASE_URL> <ANON_KEY>
 ### Advanced Scan (Recommended)
 Enable AI analysis, brute-forcing, and HTML reporting:
 ```bash
-python3 ssf.py <URL> <KEY> --agent "gemini-1.5-pro:YOUR_GEMINI_API_KEY" --brute --html --json
+python3 ssf.py <URL> <KEY> --agent "gemini-2.5-pro:YOUR_GEMINI_API_KEY" --brute --html --json
+
+python3 ssf.py <URL> <KEY> --agent "gemini-3-pro-preview:YOUR_GEMINI_API_KEY" --brute --html --json
 ```
 
 > [!TIP]
