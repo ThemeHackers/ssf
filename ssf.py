@@ -37,36 +37,78 @@ async def main():
         compiler = Compiler()
         compiler.compile()
         return
-    parser = argparse.ArgumentParser(description="Supabase Audit Framework v1.0")
-    parser.add_argument("url", help="Target URL")
-    parser.add_argument("key", help="Anon Key")
-    parser.add_argument("--agent", help="AI Provider and Key (format: model:key, e.g., gemini-2.5-pro:AIza...)", default=None)
-    parser.add_argument("--brute", nargs="?", const="default", help="Enable Bruteforce (optional: path to wordlist)")
-    parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging")
-    parser.add_argument("--json", action="store_true", help="Save report to JSON file")
-    parser.add_argument("--diff", help="Path to previous JSON report for comparison")
-    parser.add_argument("--html", action="store_true", help="Generate HTML report")
-    parser.add_argument("--knowledge", help="Path to knowledge base JSON file")
-    parser.add_argument("--ci", action="store_true", help="Exit with non-zero code on critical issues (for CI/CD)")
-    parser.add_argument("--fail-on", help="Risk level to fail on (default: HIGH)", default="HIGH", choices=["CRITICAL", "HIGH", "MEDIUM", "LOW"])
-    parser.add_argument("--ci-format", help="CI Output format", default="text", choices=["text", "github"])
-    parser.add_argument("--proxy", help="Proxy URL (e.g., http://127.0.0.1:8080)", default=None)
-    parser.add_argument("--exploit", action="store_true", help="Automatically run generated exploits")
-    parser.add_argument("--gen-fixes", action="store_true", help="Generate SQL fix script from AI analysis")
-    parser.add_argument("--analyze", help="Path to file or directory for Static Code Analysis")
-    parser.add_argument("--edge_rpc", help="Path to custom Edge Function wordlist file")
-    parser.add_argument("--roles", help="Path to JSON file with role tokens (e.g., {'user1': 'eyJ...'})")
-    parser.add_argument("--threat-model", action="store_true", help="Generate Automated Threat Model (requires --agent)")
-    parser.add_argument("--verify-fix", action="store_true", help="Verify remediation of accepted risks and update Knowledge Base")
-    parser.add_argument("--compile", action="store_true", help="Compile to standalone executable")
-    parser.add_argument("--dump-all", action="store_true", help="Dump all rows found in RLS scan (default: limit 5)")
-    parser.add_argument("--sniff", nargs="?", const=10, type=int, help="Enable Realtime Sniffer for N seconds (default: 10)")
-    parser.add_argument("--check-config", action="store_true", help="Check PostgREST configuration (max_rows)")
-    args = parser.parse_args()
+    if "--update" in sys.argv:
+        from core.updater import update_tool
+        update_tool()
+        return
+    if "--wizard" in sys.argv:
+        from core.wizard import run_wizard
+        wizard_args = run_wizard()
+        class Args:
+            pass
+        args = Args()
+        for k, v in wizard_args.items():
+            setattr(args, k, v)
+        
+        args.compile = False
+        args.check_config = False
+        args.update = False
+        args.proxy = None
+        args.sniff = None
+        args.analyze = None
+        args.edge_rpc = None
+        args.roles = None
+        args.threat_model = False
+        args.verify_fix = False
+        args.dump_all = False
+        args.gen_fixes = False
+        args.exploit = False
+        args.diff = None
+        args.knowledge = None
+        args.ci = False
+        args.fail_on = "HIGH"
+        args.ci_format = "text"
+        args.tamper = None 
+        
+    else:
+        parser = argparse.ArgumentParser(description="Supabase Audit Framework v1.0")
+        parser.add_argument("url", help="Target URL")
+        parser.add_argument("key", help="Anon Key")
+        parser.add_argument("--agent", help="AI Provider and Key (format: model:key, e.g., gemini-2.5-pro:AIza...)", default=None)
+        parser.add_argument("--brute", nargs="?", const="default", help="Enable Bruteforce (optional: path to wordlist)")
+        parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging")
+        parser.add_argument("--json", action="store_true", help="Save report to JSON file")
+        parser.add_argument("--diff", help="Path to previous JSON report for comparison")
+        parser.add_argument("--html", action="store_true", help="Generate HTML report")
+        parser.add_argument("--knowledge", help="Path to knowledge base JSON file")
+        parser.add_argument("--ci", action="store_true", help="Exit with non-zero code on critical issues (for CI/CD)")
+        parser.add_argument("--fail-on", help="Risk level to fail on (default: HIGH)", default="HIGH", choices=["CRITICAL", "HIGH", "MEDIUM", "LOW"])
+        parser.add_argument("--ci-format", help="CI Output format", default="text", choices=["text", "github"])
+        parser.add_argument("--proxy", help="Proxy URL (e.g., http://127.0.0.1:8080)", default=None)
+        parser.add_argument("--exploit", action="store_true", help="Automatically run generated exploits")
+        parser.add_argument("--gen-fixes", action="store_true", help="Generate SQL fix script from AI analysis")
+        parser.add_argument("--analyze", help="Path to file or directory for Static Code Analysis")
+        parser.add_argument("--edge_rpc", help="Path to custom Edge Function wordlist file")
+        parser.add_argument("--roles", help="Path to JSON file with role tokens (e.g., {'user1': 'eyJ...'})")
+        parser.add_argument("--threat-model", action="store_true", help="Generate Automated Threat Model (requires --agent)")
+        parser.add_argument("--verify-fix", action="store_true", help="Verify remediation of accepted risks and update Knowledge Base")
+        parser.add_argument("--compile", action="store_true", help="Compile to standalone executable")
+        parser.add_argument("--dump-all", action="store_true", help="Dump all rows found in RLS scan (default: limit 5)")
+        parser.add_argument("--sniff", nargs="?", const=10, type=int, help="Enable Realtime Sniffer for N seconds (default: 10)")
+        parser.add_argument("--check-config", action="store_true", help="Check PostgREST configuration (max_rows)")
+        parser.add_argument("--update", action="store_true", help="Update the tool to the latest version")
+        parser.add_argument("--wizard", action="store_true", help="Run in wizard mode for beginners")
+        parser.add_argument("--random-agent", action="store_true", help="Use a random User-Agent header")
+        parser.add_argument("--level", type=int, default=1, help="Level of tests to perform (1-5, default 1)")
+        parser.add_argument("--tamper", help="Path to tamper script (e.g., tamper.py)")
+        args = parser.parse_args()
+    
     if args.compile:
         return
+        
     ai_key = None
     ai_model = "gemini-3-pro-preview"
+    
     if args.agent:
         if ":" in args.agent:
             parts = args.agent.split(":", 1)
@@ -78,7 +120,8 @@ async def main():
     config = TargetConfig(
         url=args.url, key=args.key, ai_key=ai_key, ai_model=ai_model, 
         verbose=args.verbose, proxy=args.proxy,
-        sniff_duration=args.sniff, check_config=args.check_config
+        sniff_duration=args.sniff, check_config=args.check_config,
+        random_agent=args.random_agent, level=args.level, tamper=args.tamper
     )
     if args.analyze:
         if not config.has_ai:
