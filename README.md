@@ -92,11 +92,25 @@ Generate a comprehensive threat model (DFD, Attack Paths) using AI:
 ```bash
 python3 ssf.py <URL> <KEY> --agent "KEY" --threat-model
 ```
+## Managing Accepted Risks
+Create a knowledge.json file to ignore known safe patterns:
+```bash
+{
+  "accepted_risks": [
+    {
+      "pattern": "public_stats",
+      "type": "rls",
+      "reason": "Intentionally public dashboard data"
+    }
+  ]
+}
+```
+
 
 ### ✅ Advanced Risk Acceptance
 Verify if accepted risks have been remediated and update the knowledge base:
 ```bash
-python3 ssf.py <URL> <KEY> --knowledge risks.json --verify-fix
+python3 ssf.py <URL> <KEY> --knowledge knowledge.json --verify-fix
 ```
 
 ## 📊 Sample Output
