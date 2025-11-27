@@ -29,12 +29,14 @@
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/yourusername/supa-sniffer.git
-   cd supa-sniffer
+   git clone https://github.com/ThemeHackers/ssf
+   cd ssf
    ```
 
 2. **Install dependencies**:
    ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
    pip3 install -r requirements.txt
    ```
 
