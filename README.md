@@ -1,4 +1,4 @@
-# Supabase Security Framework (ssf) v1.0
+# Supabase Security Framework (ssf) v4.0
 
 ![Banner](https://img.shields.io/badge/Supabase-Security-green) ![Python](https://img.shields.io/badge/Python-3.10%2B-blue) ![License](https://img.shields.io/badge/License-MIT-yellow) ![Status](https://img.shields.io/badge/Maintained-Yes-brightgreen)
 
@@ -19,7 +19,8 @@
 | **Auth Leaks** | Identifies public tables exposing user data (PII). |
 | **RPC Security** | Enumerates and **fuzzes** executable Remote Procedure Calls for SQLi and leaks. |
 | **Storage Buckets** | Checks for public write access and listing capabilities. |
-| **Realtime Channels** | Detects open WebSocket channels broadcasting sensitive events. |
+| **Realtime Channels** | Detects open WebSocket channels and **sniffs** for sensitive events (`--sniff`). |
+| **PostgREST Config** | Checks for dangerous configuration like unlimited `max_rows` (`--check-config`). |
 | **Edge Functions** | Enumerates public Edge Functions. |
 | **Database Extensions** | Detects 30+ extensions (e.g., `pg_cron`, `pg_net`) and assesses security risks. |
 | **GraphQL** | Checks for introspection leaks, **Query Depth**, and **Field Fuzzing**. |
@@ -28,14 +29,12 @@
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/ThemeHackers/ssf
-   cd ssf
+   git clone https://github.com/yourusername/supa-sniffer.git
+   cd supa-sniffer
    ```
 
 2. **Install dependencies**:
    ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate
    pip3 install -r requirements.txt
    ```
 
@@ -49,8 +48,11 @@ python3 ssf.py <SUPABASE_URL> <ANON_KEY>
 ### Advanced Scan (Recommended)
 Enable AI analysis, brute-forcing, and HTML reporting:
 ```bash
-python3 ssf.py <URL> <KEY> --agent "YOUR_GEMINI_API_KEY" --brute --html --json
+python3 ssf.py <URL> <KEY> --agent "gemini-1.5-pro:YOUR_GEMINI_API_KEY" --brute --html --json
 ```
+
+> [!TIP]
+> You can specify the model and key in the format `model:key`. If only the key is provided, it defaults to `gemini-3-pro-preview`.
 
 ### Continuous Integration (CI) Mode
 Block regressions by comparing against a baseline:
@@ -118,7 +120,7 @@ python3 ssf.py <URL> <KEY> --knowledge risks.json --verify-fix
 |----------|-------------|
 | `url` | Target Supabase Project URL |
 | `key` | Public Anon Key |
-| `--agent <KEY>` | Google Gemini API Key for AI Analysis |
+| `--agent <KEY>` | Google Gemini API Key (format: `model:key` or just `key`) |
 | `--brute` | Enable dictionary attack for hidden tables |
 | `--html` | Generate a styled HTML report |
 | `--json` | Save raw results to JSON |
@@ -138,6 +140,8 @@ python3 ssf.py <URL> <KEY> --knowledge risks.json --verify-fix
 | `--compile` | Compile tool to standalone executable |
 | `--verbose` | Enable debug logging |
 | `--dump-all` | Dump all data from the database |
+| `--sniff [SEC]` | Enable Realtime Sniffer for N seconds (default: 10) |
+| `--check-config` | Check PostgREST configuration (max_rows) |
 
 ## ⚠️ Disclaimer
 

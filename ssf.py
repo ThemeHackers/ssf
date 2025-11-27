@@ -40,7 +40,7 @@ async def main():
     parser = argparse.ArgumentParser(description="Supabase Audit Framework v1.0")
     parser.add_argument("url", help="Target URL")
     parser.add_argument("key", help="Anon Key")
-    parser.add_argument("--agent", help="Gemini API Key", default=None)
+    parser.add_argument("--agent", help="AI Provider and Key (format: model:key, e.g., gemini-1.5-pro:AIza...)", default=None)
     parser.add_argument("--brute", nargs="?", const="default", help="Enable Bruteforce (optional: path to wordlist)")
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging")
     parser.add_argument("--json", action="store_true", help="Save report to JSON file")
@@ -60,10 +60,26 @@ async def main():
     parser.add_argument("--verify-fix", action="store_true", help="Verify remediation of accepted risks and update Knowledge Base")
     parser.add_argument("--compile", action="store_true", help="Compile to standalone executable")
     parser.add_argument("--dump-all", action="store_true", help="Dump all rows found in RLS scan (default: limit 5)")
+    parser.add_argument("--sniff", nargs="?", const=10, type=int, help="Enable Realtime Sniffer for N seconds (default: 10)")
+    parser.add_argument("--check-config", action="store_true", help="Check PostgREST configuration (max_rows)")
     args = parser.parse_args()
     if args.compile:
         return
-    config = TargetConfig(url=args.url, key=args.key, gemini_key=args.agent, verbose=args.verbose, proxy=args.proxy)
+    ai_key = None
+    ai_model = "gemini-3-pro-preview"
+    if args.agent:
+        if ":" in args.agent:
+            parts = args.agent.split(":", 1)
+            ai_model = parts[0]
+            ai_key = parts[1]
+        else:
+            ai_key = args.agent
+            
+    config = TargetConfig(
+        url=args.url, key=args.key, ai_key=ai_key, ai_model=ai_model, 
+        verbose=args.verbose, proxy=args.proxy,
+        sniff_duration=args.sniff, check_config=args.check_config
+    )
     if args.analyze:
         if not config.has_ai:
             console.print("[bold red][!] --analyze requires --agent (AI) to be enabled.[/]")
@@ -75,7 +91,7 @@ async def main():
             console.print("[yellow][!] No supported code files found.[/]")
             return
         console.print(f"[green][+] Found {len(code_files)} files to analyze.[/]")
-        agent = AIAgent(config.gemini_key)
+        agent = AIAgent(api_key=config.ai_key, model_name=config.ai_model)
         ai_text = Markdown("")
         panel = Panel(ai_text, title="🤖 AI Analyzing Code...", border_style="magenta")
         full_ai_response = ""
@@ -303,11 +319,20 @@ async def main():
         if res_postgres["config_issues"]:
             for i in res_postgres["config_issues"]:
                 pg_tree.add(f"[yellow]{i}[/]")
+        elif config.check_config:
+            pg_tree.add("[green]max_rows configuration appears safe[/]")
+        
+        if config.sniff_duration:
+             if res_realtime.get("risk") == "CRITICAL":
+                 rt_branch.add("[bold red]Realtime Sniffer: Captured sensitive events![/]")
+             else:
+                 rt_branch.add(f"[green]Realtime Sniffer: No events captured ({config.sniff_duration}s)[/]")
+
         console.print(Panel(pg_tree, title="[bold]Database Config[/]", border_style="magenta"))
         if config.has_ai:
             from rich.live import Live
             from rich.text import Text
-            agent = AIAgent(config.gemini_key)
+            agent = AIAgent(api_key=config.ai_key, model_name=config.ai_model)
             ai_input = full_report["findings"]
             ai_input["target"] = config.url
             ai_input["accepted_risks"] = accepted_risks
@@ -327,6 +352,8 @@ async def main():
             if "error" not in report:
                 console.print(Panel(Markdown(f"### AI Risk: {report.get('risk_level')}\n\n{report.get('summary')}"), title="🤖 AI Security Assessment", border_style="magenta"))
                 full_report["ai_analysis"] = report
+            else:
+                console.print(Panel(f"[bold red]AI Error:[/bold red] {report['error']}", title="🤖 AI Error", border_style="red"))
         if args.threat_model and config.has_ai:
             console.print(Panel("[magenta]Generating Automated Threat Model...[/]", border_style="magenta"))
             tm_panel = Panel(Markdown(""), title="🤖 Threat Model", border_style="magenta")
@@ -340,6 +367,8 @@ async def main():
             if "error" not in tm_report:
                 full_report["threat_model"] = tm_report
                 console.print(Panel(Markdown(f"### Threat Model Generated\n\n**Critical Assets:** {', '.join(tm_report.get('assets', []))}\n\n**Attack Paths:** {len(tm_report.get('attack_paths', []))} identified."), title="🤖 Threat Model Results", border_style="magenta"))
+            else:
+                console.print(Panel(f"[bold red]Threat Model Error:[/bold red] {tm_report['error']}", title="🤖 Threat Model Error", border_style="red"))
         if args.exploit:
             console.print("\n[bold yellow][*] Running Exploit Module...[/]")
             await run_exploit(auto_confirm=True)
