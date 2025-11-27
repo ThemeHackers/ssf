@@ -5,6 +5,10 @@ class StorageScanner(BaseScanner):
     async def scan(self) -> List[Dict]:
         results = []
         common_buckets = Wordlists.buckets
+        
+        if self.client.config.level >= 2:
+            common_buckets.extend(["backup", "database", "archive", "old", "temp", "staging", "dev", "prod"])
+            
         for bucket in common_buckets:
             self.log(f"[*] Checking storage bucket: {bucket}", "cyan")
             url = f"/storage/v1/bucket/{bucket}"
@@ -34,6 +38,14 @@ class StorageScanner(BaseScanner):
             "shell.php": "<?php system($_GET['cmd']); ?>",
             "malware.exe": "MZ..."
         }
+        
+        if self.client.config.level >= 3:
+            dangerous_files.update({
+                "test.jsp": "<% out.println('test'); %>",
+                "test.asp": "<% Response.Write('test') %>",
+                "test.svg": "<svg onload=alert(1)>",
+                "config.json": '{"test": "value"}'
+            })
         for fname, content in dangerous_files.items():
             try:
                 path = f"ssf_test/{fname}"
