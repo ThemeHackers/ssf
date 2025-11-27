@@ -17,6 +17,7 @@ class SessionManager:
             verify=False,
             proxy=self.config.proxy
         )
+        self.client.config = self.config
         return self.client
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.client.aclose()

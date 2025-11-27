@@ -48,6 +48,7 @@ class HTMLReporter:
             margin: 0;
             padding: 40px 20px;
             line-height: 1.6;
+            overflow-wrap: anywhere; /* Ensure all text wraps */
         }
         .container {
             max-width: 1200px;
@@ -159,6 +160,7 @@ class HTMLReporter:
             padding: 20px;
             text-align: left;
             border-bottom: 1px solid var(--border);
+            word-break: break-word; /* Ensure table content wraps */
         }
         th {
             background-color: rgba(255, 255, 255, 0.03);
@@ -242,6 +244,7 @@ class HTMLReporter:
             padding: 20px;
             margin-top: 20px;
             border-left: 4px solid var(--accent-primary);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); /* Add depth */
         }
         .remediation-title {
             color: #d8b4fe;
@@ -255,7 +258,11 @@ class HTMLReporter:
             background: #0f172a;
             padding: 15px;
             border-radius: 6px;
-            overflow-x: auto;
+            white-space: pre-wrap;       /* CSS3 */
+            white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+            white-space: -pre-wrap;      /* Opera 4-6 */
+            white-space: -o-pre-wrap;    /* Opera 7 */
+            word-wrap: break-word;       /* Internet Explorer 5.5+ */
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.9rem;
             color: #cbd5e1;

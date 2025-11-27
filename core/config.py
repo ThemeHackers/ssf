@@ -5,13 +5,16 @@ from typing import Optional
 class TargetConfig(BaseModel):
     url: str
     key: str
-    gemini_key: Optional[str] = Field(default=None)
+    ai_key: Optional[str] = Field(default=None)
+    ai_model: Optional[str] = Field(default="gemini-3-pro-preview")
     proxy: Optional[str] = Field(default=None)
     timeout: int = 10
     verbose: bool = False
+    sniff_duration: Optional[int] = Field(default=None)
+    check_config: bool = False
     @property
     def has_ai(self) -> bool:
-        return bool(self.gemini_key)
+        return bool(self.ai_key)
 class Wordlists:
     tables = [
         "users", "profiles", "admin", "secrets", "logs", "transactions",

@@ -4,10 +4,10 @@ import asyncio
 import re
 from typing import Dict, Any, Callable, Optional
 class AIAgent:
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, model_name: str = "gemini-3-pro-preview"):
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel(
-            'gemini-3-pro-preview',
+            model_name,
             generation_config=genai.GenerationConfig(
                 max_output_tokens=16384,
                 temperature=0.5,
@@ -77,7 +77,8 @@ class AIAgent:
            - Ensure scripts handle authentication (Anon Key) properly.
 
         IMPORTANT: 
-        1. Start your response with a "Thinking Process:" section where you explain your analysis step-by-step.
+
+        1. Start your response with a "## Thinking Process" section where you explain your analysis step-by-step.
         2. Then, provide the JSON output wrapped in a markdown code block (```json ... ```).
 
         OUTPUT FORMAT:
@@ -205,7 +206,7 @@ class AIAgent:
             ],
             "recommendations": ["..."]
         }}
-        Start with "Thinking Process:" then provide the JSON.
+        Start with "## Thinking Process" then provide the JSON.
         """
         try:
             if stream_callback:
@@ -282,7 +283,7 @@ class AIAgent:
                 "elevation_of_privilege": "..."
             }} 
         }} 
-        Start with "Thinking Process:" then provide the JSON.
+        Start with "## Thinking Process" then provide the JSON.
         """
         try:
             if stream_callback:
