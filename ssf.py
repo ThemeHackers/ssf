@@ -40,7 +40,7 @@ async def main():
     parser = argparse.ArgumentParser(description="Supabase Audit Framework v1.0")
     parser.add_argument("url", help="Target URL")
     parser.add_argument("key", help="Anon Key")
-    parser.add_argument("--agent", help="AI Provider and Key (format: model:key, e.g., gemini-1.5-pro:AIza...)", default=None)
+    parser.add_argument("--agent", help="AI Provider and Key (format: model:key, e.g., gemini-2.5-pro:AIza...)", default=None)
     parser.add_argument("--brute", nargs="?", const="default", help="Enable Bruteforce (optional: path to wordlist)")
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging")
     parser.add_argument("--json", action="store_true", help="Save report to JSON file")
