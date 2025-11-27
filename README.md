@@ -160,6 +160,11 @@ python3 ssf.py <URL> <KEY> --knowledge knowledge.json --verify-fix
 | `--dump-all` | Dump all data from the database |
 | `--sniff [SEC]` | Enable Realtime Sniffer for N seconds (default: 10) |
 | `--check-config` | Check PostgREST configuration (max_rows) |
+| `--update` | Update the tool to the latest version |
+| `--wizard` | Run in wizard mode for beginners |
+| `--random-agent` | Use a random User-Agent header |
+| `--level <LEVEL>` | Level of tests to perform (1-5, default 1) |
+| `--tamper <FILE>` | Path to tamper script (e.g., tamper.py) |
 
 ## ⚠️ Disclaimer
 
