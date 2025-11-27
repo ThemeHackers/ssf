@@ -1,3 +1,4 @@
+
 {
     "security_knowledge_base": {
         "introduction": "This knowledge base provides deep technical context for auditing Supabase instances. It covers common misconfigurations, vulnerabilities, and best practices.",
