@@ -188,7 +188,7 @@ async def main():
             panel.renderable = Markdown(full_ai_response)
         console.print(Panel("[magenta]Connecting to AI Agent...[/]", border_style="magenta", expand=False))
         with Live(panel, refresh_per_second=8, console=console, auto_refresh=True):
-             report = await agent.analyze_results(ai_input, stream_callback=update_ai_output_markdown)
+             report = await ai_agent.analyze_results(ai_input, stream_callback=update_ai_output_markdown)
         if "error" not in report:
             console.print(Panel(Markdown(f"### AI Risk: {report.get('risk_level')}\n\n{report.get('summary')}"), title="🤖 AI Security Assessment", border_style="magenta", expand=False))
             full_report["ai_analysis"] = report
@@ -203,7 +203,7 @@ async def main():
             tm_text += chunk
             tm_panel.renderable = Markdown(tm_text)
         with Live(tm_panel, refresh_per_second=8, console=console, auto_refresh=True):
-             tm_report = await agent.generate_threat_model(ai_input, stream_callback=update_tm_output)
+             tm_report = await ai_agent.generate_threat_model(ai_input, stream_callback=update_tm_output)
         if "error" not in tm_report:
             full_report["threat_model"] = tm_report
             console.print(Panel(Markdown(f"### Threat Model Generated\n\n**Critical Assets:** {', '.join(tm_report.get('assets', []))}\n\n**Attack Paths:** {len(tm_report.get('attack_paths', []))} identified."), title="🤖 Threat Model Results", border_style="magenta"))
