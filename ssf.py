@@ -35,7 +35,7 @@ def show_agent_list():
 
     console.print(table)
     console.print("\n[bold cyan]Usage Example:[/]")
-    console.print("  python3 ssf.py <URL> <KEY> --agent-provider deepseek --agent deepseek-coder --agent-key <KEY>")
+    console.print("  python ssf.py <URL> <KEY> --agent-provider deepseek --agent deepseek-coder --agent-key <KEY>")
 async def main():
     show_banner(console)
     import sys
