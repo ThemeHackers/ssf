@@ -1,4 +1,5 @@
 import asyncio
+import os
 import argparse
 import json
 import time
@@ -137,7 +138,7 @@ async def main():
              report = await agent.analyze_code(code_files, stream_callback=update_ai_output_markdown)
         if "error" not in report:
             console.print(Panel(Markdown(f"### Code Risk: {report.get('risk_level')}\n\n{report.get('summary')}"), title="🤖 Static Analysis Results", border_style="magenta"))
-            import os
+
             timestamp = int(time.time())
             output_dir = f"audit_report_{timestamp}"
             os.makedirs(output_dir, exist_ok=True)
@@ -237,7 +238,7 @@ async def main():
                 console.print("[dim]  No changes in RLS findings.[/]")
         except Exception as e:
             console.print(f"[red]Error loading diff file: {e}[/]")
-    import os
+
     timestamp = int(time.time())
     output_dir = f"audit_report_{timestamp}"
     os.makedirs(output_dir, exist_ok=True)
