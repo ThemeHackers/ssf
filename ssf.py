@@ -19,6 +19,23 @@ from core.report import HTMLReporter, FixGenerator
 from core.banner import show_banner
 from core.exploit import run_exploit
 console = Console()
+
+def show_agent_list():
+    table = Table(title="🤖 Supported AI Agents & Providers", border_style="cyan")
+    table.add_column("Provider", style="bold magenta")
+    table.add_column("Model Name (Examples)", style="green")
+    table.add_column("Env Variable", style="yellow")
+    table.add_column("Notes", style="dim")
+
+    table.add_row("gemini", "gemini-2.5-flash, gemini-3-pro-preview", "GEMINI_API_KEY", "Default provider. Fast & Free tier available.")
+    table.add_row("openai", "gpt-4o, gpt-3.5-turbo", "OPENAI_API_KEY", "Industry standard. Requires paid API key.")
+    table.add_row("anthropic", "claude-3-opus, claude-3-sonnet", "ANTHROPIC_API_KEY", "High reasoning capabilities.")
+    table.add_row("deepseek", "deepseek-chat, deepseek-coder", "DEEPSEEK_API_KEY", "Good for coding tasks. Compatible with OpenAI SDK.")
+    table.add_row("ollama", "llama3, mistral, qwen", "N/A (Local)", "Runs locally. Requires Ollama server running.")
+
+    console.print(table)
+    console.print("\n[bold cyan]Usage Example:[/]")
+    console.print("  python ssf.py <URL> <KEY> --agent-provider deepseek --agent deepseek-coder --agent-key <KEY>")
 async def main():
     show_banner(console)
     import sys
@@ -30,6 +47,9 @@ async def main():
     if "--update" in sys.argv:
         from core.updater import update_tool
         update_tool()
+        return
+    if "--agent-lists" in sys.argv:
+        show_agent_list()
         return
     if "--wizard" in sys.argv:
         from core.wizard import run_wizard
@@ -62,8 +82,9 @@ async def main():
         
     else:
         parser = argparse.ArgumentParser(description="Supabase Audit Framework v2.0")
-        parser.add_argument("url", help="Target URL")
-        parser.add_argument("key", help="Anon Key")
+        parser.add_argument("--agent-lists", action="store_true", help="List supported AI agents and exit")
+        parser.add_argument("url", nargs="?", help="Target URL")
+        parser.add_argument("key", nargs="?", help="Anon Key")
         parser.add_argument("--agent", help="AI Model Name (e.g., gemini-2.5-flash, llama3)", default="gemini-2.5-flash")
         parser.add_argument("--agent-key", help="AI API Key (for Gemini/OpenAI/DeepSeek/Anthropic)", default=None)
         parser.add_argument("--agent-provider", help="AI Provider (gemini, ollama, openai, deepseek, anthropic)", default="gemini", choices=["gemini", "ollama", "openai", "deepseek", "anthropic"])
@@ -96,6 +117,10 @@ async def main():
         args = parser.parse_args()
     
     if args.compile:
+        return
+
+    if not args.url or not args.key:
+        parser.print_help()
         return
         
     ai_key = args.agent_key
