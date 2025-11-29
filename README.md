@@ -1,4 +1,4 @@
-# Supabase Security Framework (ssf) v1.0
+# Supabase Security Framework (ssf) v2.0
 
 ![Banner](https://img.shields.io/badge/Supabase-Security-green) ![Python](https://img.shields.io/badge/Python-3.10%2B-blue) ![License](https://img.shields.io/badge/License-MIT-yellow) ![Status](https://img.shields.io/badge/Maintained-Yes-brightgreen)
 
@@ -50,13 +50,24 @@ python3 ssf.py <SUPABASE_URL> <ANON_KEY>
 ### Advanced Scan (Recommended)
 Enable AI analysis, brute-forcing, and HTML reporting:
 ```bash
-python3 ssf.py <URL> <KEY> --agent "gemini-2.5-pro:YOUR_GEMINI_API_KEY" --brute --html --json
+# Using Gemini (Cloud)
+python3 ssf.py <URL> <KEY> --agent-provider gemini --agent gemini-2.0-flash --agent-key "YOUR_API_KEY" --brute --html --json
 
-python3 ssf.py <URL> <KEY> --agent "gemini-3-pro-preview:YOUR_GEMINI_API_KEY" --brute --html --json
+# Using OpenAI (GPT-4)
+python3 ssf.py <URL> <KEY> --agent-provider openai --agent gpt-4-turbo --agent-key "sk-..." --brute --html --json
+
+# Using Anthropic (Claude)
+python3 ssf.py <URL> <KEY> --agent-provider anthropic --agent claude-3-5-sonnet-20240620 --agent-key "sk-ant-..." --brute --html --json
+
+# Using DeepSeek (DeepSeek-V3)
+python3 ssf.py <URL> <KEY> --agent-provider deepseek --agent deepseek-chat --agent-key "sk-..." --brute --html --json
+
+# Using Ollama (Local)
+python3 ssf.py <URL> <KEY> --agent-provider ollama --agent llama3 --brute --html --json
 ```
 
 > [!TIP]
-> You can specify the model and key in the format `model:key`. If only the key is provided, it defaults to `gemini-3-pro-preview`.
+> For Gemini, you can set the `GEMINI_API_KEY` environment variable instead of passing `--agent-key`.
 
 ### Continuous Integration (CI) Mode
 Block regressions by comparing against a baseline:
@@ -71,13 +82,13 @@ python3 ssf.py <URL> <KEY> --json --diff baseline.json
 ### 🧠 Static Code Analysis
 Scan your local source code for Supabase-specific vulnerabilities (e.g., hardcoded keys, weak RLS definitions in migrations):
 ```bash
-python3 ssf.py <URL> <KEY> --agent "KEY" --analyze ./supabase/migrations
+python3 ssf.py <URL> <KEY> --agent-provider gemini --agent-key "KEY" --analyze ./supabase/migrations
 ```
 
 ### 🛠️ Automated Remediation
 Generate a SQL script to fix identified vulnerabilities:
 ```bash
-python3 ssf.py <URL> <KEY> --agent "KEY" --gen-fixes
+python3 ssf.py <URL> <KEY> --agent-provider gemini --agent-key "KEY" --gen-fixes
 ```
 
 ### 🎭 Multi-Role Testing
@@ -90,7 +101,7 @@ python3 ssf.py <URL> <KEY> --roles roles.json
 ### 🤖 Automated Threat Modeling
 Generate a comprehensive threat model (DFD, Attack Paths) using AI:
 ```bash
-python3 ssf.py <URL> <KEY> --agent "KEY" --threat-model
+python3 ssf.py <URL> <KEY> --agent-provider gemini --agent-key "KEY" --threat-model
 ```
 ## Managing Accepted Risks
 Create a knowledge.json file to ignore known safe patterns:
@@ -132,13 +143,37 @@ python3 ssf.py <URL> <KEY> --knowledge knowledge.json --verify-fix
 
 👉 **Read our full [Security Policy](SECURITY.md) before use.**
 
+### Local AI Support (Ollama)
+Run scans using local LLMs (e.g., Llama 3) for privacy and offline usage:
+```bash
+# Ensure Ollama is running (ollama serve)
+python3 ssf.py <URL> <KEY> --agent-provider ollama --agent llama3
+```
+
+### 🎭 Tamper Scripts (WAF Bypass)
+Use built-in tamper scripts or custom ones to bypass WAFs:
+```bash
+# Use built-in tamper
+python3 ssf.py <URL> <KEY> --tamper randomcase
+
+# Available built-ins:
+# - randomcase: SeLECt * fRoM...
+# - charencode: URL encode
+# - doubleencode: Double URL encode
+# - unionall: UNION SELECT -> UNION ALL SELECT
+# - space2plus: space -> +
+# - version_comment: space -> /*!50000*/
+```
+
 ## 📝 Arguments
 
 | Argument | Description |
 |----------|-------------|
 | `url` | Target Supabase Project URL |
 | `key` | Public Anon Key |
-| `--agent <KEY>` | Google Gemini API Key (format: `model:key` or just `key`) |
+| `--agent-provider <NAME>` | AI Provider: `gemini` (default), `ollama`, `openai`, `deepseek`, `anthropic` |
+| `--agent <MODEL>` | AI Model Name (e.g., `gemini-3-pro-preview`, `llama3`, `gpt-4`) |
+| `--agent-key <KEY>` | AI API Key (for Gemini/OpenAI/DeepSeek/Anthropic) |
 | `--brute` | Enable dictionary attack for hidden tables |
 | `--html` | Generate a styled HTML report |
 | `--json` | Save raw results to JSON |
@@ -164,7 +199,7 @@ python3 ssf.py <URL> <KEY> --knowledge knowledge.json --verify-fix
 | `--wizard` | Run in wizard mode for beginners |
 | `--random-agent` | Use a random User-Agent header |
 | `--level <LEVEL>` | Level of tests to perform (1-5, default 1) |
-| `--tamper <FILE>` | Path to tamper script (e.g., tamper.py) |
+| `--tamper <NAME>` | Tamper script name (built-in) or path to file |
 
 ## ⚠️ Disclaimer
 
