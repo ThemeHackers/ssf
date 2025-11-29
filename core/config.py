@@ -7,6 +7,7 @@ class TargetConfig(BaseModel):
     key: str
     ai_key: Optional[str] = Field(default=None)
     ai_model: Optional[str] = Field(default="gemini-3-pro-preview")
+    ai_provider: str = "gemini"
     proxy: Optional[str] = Field(default=None)
     timeout: int = 10
     verbose: bool = False

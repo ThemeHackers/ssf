@@ -9,7 +9,13 @@ class TamperManager:
             "space2comment": self._tamper_space2comment,
             "base64encode": self._tamper_base64encode,
             "apostrophemask": self._tamper_apostrophemask,
-            "between": self._tamper_between
+            "between": self._tamper_between,
+            "randomcase": self._tamper_randomcase,
+            "charencode": self._tamper_charencode,
+            "doubleencode": self._tamper_doubleencode,
+            "unionall": self._tamper_unionall,
+            "space2plus": self._tamper_space2plus,
+            "version_comment": self._tamper_version_comment
         }
         if tamper_script_path:
             self.load_tamper_script(tamper_script_path)
@@ -59,6 +65,39 @@ class TamperManager:
     def _tamper_between(self, payload: Any, **kwargs) -> Any:
         if isinstance(payload, str):
             return payload.replace(">", " NOT BETWEEN 0 AND ").replace("=", " BETWEEN ").replace("<", " NOT BETWEEN 0 AND ")
+        return payload
+
+    def _tamper_randomcase(self, payload: Any, **kwargs) -> Any:
+        if isinstance(payload, str):
+            import random
+            return "".join(c.upper() if random.choice([True, False]) else c.lower() for c in payload)
+        return payload
+
+    def _tamper_charencode(self, payload: Any, **kwargs) -> Any:
+        if isinstance(payload, str):
+            import urllib.parse
+            return urllib.parse.quote(payload)
+        return payload
+
+    def _tamper_doubleencode(self, payload: Any, **kwargs) -> Any:
+        if isinstance(payload, str):
+            import urllib.parse
+            return urllib.parse.quote(urllib.parse.quote(payload))
+        return payload
+
+    def _tamper_unionall(self, payload: Any, **kwargs) -> Any:
+        if isinstance(payload, str):
+            return payload.replace("UNION SELECT", "UNION ALL SELECT")
+        return payload
+
+    def _tamper_space2plus(self, payload: Any, **kwargs) -> Any:
+        if isinstance(payload, str):
+            return payload.replace(" ", "+")
+        return payload
+
+    def _tamper_version_comment(self, payload: Any, **kwargs) -> Any:
+        if isinstance(payload, str):
+            return payload.replace(" ", "/*!50000*/")
         return payload
 
     def tamper(self, payload: Any, **kwargs) -> Any:
