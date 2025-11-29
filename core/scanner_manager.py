@@ -39,7 +39,7 @@ class ScannerManager:
                 self.console.print(f"[red][!] Failed to load Knowledge Base from {self.args.knowledge}[/]")
 
     async def run(self):
-        self.console.print(Panel.fit("[bold white]Supabase Audit Framework v1.0[/]\n[cyan]RLS • Auth • Storage • RPC • Realtime • AI[/]", border_style="blue"))
+        self.console.print(Panel.fit("[bold white]Supabase Audit Framework v2.0[/]\n[cyan]RLS • Auth • Storage • RPC • Realtime • AI[/]", border_style="blue"))
         
         async with SessionManager(self.config) as client:
  
