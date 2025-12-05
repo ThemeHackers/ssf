@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSF v3.0 - WebUI"</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+    <header class="top-nav">
+        <div class="nav-container">
+            <div class="logo">
+                <div class="logo-icon">⚡</div>
+                <div class="logo-text">
+                    <span class="brand">SSF</span> <span class="version">v3.0</span>
+                </div>
+            </div>
+
+            <nav class="nav-links" id="nav-links">
+                <button class="nav-btn active" data-target="dashboard">Dashboard</button>
+                <button class="nav-btn" data-target="scan">New Scan</button>
+                <button class="nav-btn" data-target="report">Report</button>
+                <button class="nav-btn" data-target="history">History</button>
+                <button class="nav-btn" data-target="downloads">Downloads</button>
+                <button class="nav-btn" data-target="risks">Risks</button>
+                <button class="nav-btn" data-target="exploit">Exploits</button>
+                <button class="nav-btn" data-target="threat-model">Threat Model</button>
+            </nav>
+
+            <div class="nav-actions">
+                <button class="mobile-toggle" onclick="toggleMobileMenu()">☰</button>
+            </div>
+        </div>
+        <div class="progress-line" id="progress-line">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+    </header>
+
+
+    <main class="main-container">
+
+
+        <section id="dashboard" class="view active">
+            <div class="hero-section">
+                <h1>Security Overview</h1>
+                <p class="subtitle">Real-time insights into your Supabase instance security posture.</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card critical">
+                    <div class="stat-icon">🛡️</div>
+                    <div class="stat-info">
+                        <h3>Critical Risks</h3>
+                        <span class="stat-value" id="stat-critical">0</span>
+                    </div>
+                </div>
+                <div class="stat-card high">
+                    <div class="stat-icon">⚠️</div>
+                    <div class="stat-info">
+                        <h3>High Risks</h3>
+                        <span class="stat-value" id="stat-high">0</span>
+                    </div>
+                </div>
+                <div class="stat-card medium">
+                    <div class="stat-icon">⚡</div>
+                    <div class="stat-info">
+                        <h3>Medium Risks</h3>
+                        <span class="stat-value" id="stat-medium">0</span>
+                    </div>
+                </div>
+                <div class="stat-card safe">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-info">
+                        <h3>Safe Resources</h3>
+                        <span class="stat-value" id="stat-safe">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ai-summary-section">
+                <div class="ai-card">
+                    <div class="ai-header">
+                        <span class="ai-icon">✨</span>
+                        <h3>AI Security Insights</h3>
+                    </div>
+                    <div class="ai-content" id="ai-summary-text">
+                        <p class="placeholder-text">Run a scan with AI enabled to generate a security analysis.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="charts-section">
+                <div class="chart-card">
+                    <h3>Vulnerability Distribution</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="vulnChart"></canvas>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <h3>System Status</h3>
+                    <div class="info-row">
+                        <span>Last Scan:</span>
+                        <span id="current-date" class="highlight">Never</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Target:</span>
+                        <span id="dash-target" class="highlight">Not Configured</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Scan Duration:</span>
+                        <span id="dash-duration" class="highlight">0s</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Total Checks:</span>
+                        <span id="dash-checks" class="highlight">0</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Active Engine:</span>
+                        <span class="highlight">SSF Core v3.0</span>
+                    </div>
+                    <div class="info-row">
+                        <span>AI Provider:</span>
+                        <span id="dash-ai-provider" class="highlight">None</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="log-section">
+                <div class="log-card">
+                    <div class="log-header">
+                        <h3>📟 Live Activity Log</h3>
+                        <span class="status-dot active"></span>
+                    </div>
+                    <div class="log-window" id="activity-log">
+                        <div class="log-entry"><span class="timestamp">[System]</span> <span class="info">SSF v3.0 Web
+                                UI initialized.</span></div>
+                        <div class="log-entry"><span class="timestamp">[System]</span> <span class="success">Ready to
+                                scan.</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <section id="scan" class="view">
+            <div class="scan-layout">
+                <div class="scan-card">
+                    <div class="card-header">
+                        <h2>Configure New Scan</h2>
+                        <p>Launch a comprehensive security audit against your target.</p>
+                        <p>It may take a while, please wait.</p>
+                    </div>
+                    <form id="scan-form">
+                        <div class="scan-grid">
+                            <div class="scan-inputs">
+                                <div class="form-group">
+                                    <label>Target URL</label>
+                                    <input type="url" id="target-url" placeholder="https://your-project.supabase.co"
+                                        required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Service Role Key</label>
+                                    <input type="password" id="target-key"
+                                        placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." required>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>AI Provider</label>
+                                        <select id="ai-provider" onchange="updateModelOptions()">
+                                            <option value="gemini">Google Gemini</option>
+                                            <option value="openai">OpenAI</option>
+                                            <option value="anthropic">Anthropic</option>
+                                            <option value="ollama">Ollama (Local)</option>
+                                            <option value="deepseek">DeepSeek</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Model</label>
+                                        <select id="ai-model">
+                                            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                                            <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                                            <option value="claude-3-opus">Claude 3 Opus</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>AI API Key (Optional)</label>
+                                        <input type="password" id="ai-key" placeholder="sk-...">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Scan Depth (1-3)</label>
+                                        <div style="display:flex; align-items:center; gap:1rem">
+                                            <input type="range" id="scan-level" min="1" max="3" value="1"
+                                                oninput="this.nextElementSibling.value = this.value" style="flex:1">
+                                            <output>1</output>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                                    <button type="submit" id="start-scan-btn" class="btn-primary large scan-btn"
+                                        style="flex: 1; min-width: 200px;">
+                                        🚀 Launch Custom Scan
+                                    </button>
+                                    <button type="button" id="stop-scan-btn" class="btn-danger large"
+                                        style="flex: 1; min-width: 200px; display: none;">
+                                        ⏹ Stop Scan
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="scan-modules-col">
+                                <label
+                                    style="display:block; margin-bottom:0.5rem; color:var(--text-secondary); font-size:0.9rem;">Scan
+                                    Modules</label>
+                                <div class="module-grid">
+                                    <label class="module-card">
+                                        <input type="checkbox" id="mod-rls" checked>
+                                        <div class="module-content">
+                                            <div class="module-icon">🛡️</div>
+                                            <div class="module-text">
+                                                <span class="module-title">RLS Policies</span>
+                                                <p class="module-desc">Checks for Row Level Security.</p>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <label class="module-card">
+                                        <input type="checkbox" id="mod-auth" checked>
+                                        <div class="module-content">
+                                            <div class="module-icon">🔑</div>
+                                            <div class="module-text">
+                                                <span class="module-title">Authentication</span>
+                                                <p class="module-desc">Verifies public registration.</p>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <label class="module-card">
+                                        <input type="checkbox" id="mod-storage" checked>
+                                        <div class="module-content">
+                                            <div class="module-icon">📦</div>
+                                            <div class="module-text">
+                                                <span class="module-title">Storage</span>
+                                                <p class="module-desc">Scans public buckets.</p>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <label class="module-card">
+                                        <input type="checkbox" id="mod-rpc" checked>
+                                        <div class="module-content">
+                                            <div class="module-icon">⚡</div>
+                                            <div class="module-text">
+                                                <span class="module-title">RPC / Functions</span>
+                                                <p class="module-desc">Finds insecure functions.</p>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <label class="module-card">
+                                        <input type="checkbox" id="mod-realtime" checked>
+                                        <div class="module-content">
+                                            <div class="module-icon">📡</div>
+                                            <div class="module-text">
+                                                <span class="module-title">Realtime</span>
+                                                <p class="module-desc">Checks exposed channels.</p>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <label class="module-card">
+                                        <input type="checkbox" id="mod-postgres" checked>
+                                        <div class="module-content">
+                                            <div class="module-icon">🐘</div>
+                                            <div class="module-text">
+                                                <span class="module-title">Postgres</span>
+                                                <p class="module-desc">Analyzes DB config.</p>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="scan-progress-container" class="hidden" style="margin-top: 2rem; text-align: center;">
+                        <p>Scanning in progress... Please wait.</p>
+                        <div class="loader"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <section id="report" class="view">
+            <div class="report-layout">
+                <aside class="report-sidebar">
+                    <div class="report-controls">
+                        <button class="btn-primary full-width" onclick="downloadReport()">Download JSON</button>
+                        <button class="btn-secondary full-width" onclick="loadLatestReport()">Refresh Data</button>
+                    </div>
+                    <div class="filter-group">
+                        <h3>Filters</h3>
+                        <div class="filter-options">
+                            <label><input type="radio" name="filter" value="all" onchange="filterReport(this.value)"
+                                    checked> All Findings</label>
+                            <label><input type="radio" name="filter" value="rls" onchange="filterReport(this.value)">
+                                RLS Policies</label>
+                            <label><input type="radio" name="filter" value="auth" onchange="filterReport(this.value)">
+                                Authentication</label>
+                            <label><input type="radio" name="filter" value="storage"
+                                    onchange="filterReport(this.value)"> Storage</label>
+                            <label><input type="radio" name="filter" value="rpc" onchange="filterReport(this.value)">
+                                RPC / Functions</label>
+                            <label><input type="radio" name="filter" value="postgres"
+                                    onchange="filterReport(this.value)"> Database Config</label>
+                        </div>
+                    </div>
+                </aside>
+                <div class="report-main">
+                    <header class="report-header">
+                        <h2>Detailed Findings</h2>
+                        <span class="report-meta">Latest Scan Results</span>
+                    </header>
+                    <div id="report-content" class="findings-list">
+                        <div class="empty-state">
+                            <div class="empty-icon">📊</div>
+                            <p>No report loaded. Run a scan to see results.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <section id="history" class="view">
+            <div class="centered-layout">
+                <header class="section-header">
+                    <h2>Scan History</h2>
+                    <button class="btn-secondary" onclick="loadHistory()">Refresh</button>
+                </header>
+                <div class="history-grid" id="history-list">
+
+                </div>
+            </div>
+        </section>
+
+        <section id="downloads" class="view">
+            <div class="centered-layout">
+                <header class="section-header">
+                    <h2>Downloads</h2>
+                    <button class="btn-secondary" onclick="loadDownloads()">Refresh</button>
+                </header>
+                <div class="downloads-grid" id="downloads-list">
+                    
+                </div>
+            </div>
+        </section>
+
+
+        <section id="risks" class="view">
+            <div class="centered-layout">
+                <header class="section-header">
+                    <h2>Risk Management</h2>
+                    <p>Review and manage accepted risks.</p>
+                </header>
+                <div class="risk-list" id="risk-list">
+
+                </div>
+            </div>
+        </section>
+
+
+        <section id="exploit" class="view">
+            <div class="centered-layout">
+                <header class="section-header">
+                    <h2>Exploit Gallery</h2>
+                    <p>Automated Proof-of-Concept generation and execution.</p>
+                </header>
+                <div class="exploit-grid" id="exploit-grid">
+                    <div class="empty-state">
+                        <div class="empty-icon">💣</div>
+                        <p>No exploits available. Run a scan with AI enabled.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="threat-model" class="view">
+            <div class="full-layout">
+                <header class="section-header">
+                    <h2>Visual Threat Model</h2>
+                    <p>Interactive graph of Actors, Attacks, and Assets.</p>
+                    <button class="btn-secondary" onclick="loadThreatModel()">Refresh Graph</button>
+                </header>
+                <div id="threat-graph-container" class="graph-container">
+                    <div class="empty-state">
+                        <p>Loading graph...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="exploit-modal" class="modal hidden">
+        <div class="modal-content large-modal">
+            <div class="modal-header">
+                <h3>🚀 Exploit Runner</h3>
+                <button class="close-modal" onclick="closeExploitModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="exploit-status" class="status-box">
+                    <p>Ready to launch exploits.</p>
+                </div>
+                <div id="exploit-results" class="results-box"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="edit-payload-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✏️ Edit Payload</h3>
+                <button class="close-modal" onclick="closeEditPayloadModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Target</label>
+                    <input type="text" id="edit-payload-target" readonly style="opacity:0.7">
+                </div>
+                <div class="form-group">
+                    <label>Payload (JSON)</label>
+                    <textarea id="edit-payload-json" rows="10"
+                        style="font-family:monospace; width:100%; background:rgba(0,0,0,0.3); color:var(--text-primary); border:1px solid var(--border); border-radius:6px; padding:0.5rem;"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button class="btn-secondary" onclick="closeEditPayloadModal()">Cancel</button>
+                    <button class="btn-primary" onclick="savePayloadOverride()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/cytoscape.min.js?v=3.9"></script>
+    <script src="/js/threat_graph.js?v=3.9"></script>
+    <script src="/js/app.js?v=3.9"></script>
+</body>
+
+</html>

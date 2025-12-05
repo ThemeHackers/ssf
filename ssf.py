@@ -32,15 +32,26 @@ console = Console()
 async def main():
     show_banner(console)
     import sys
+    import os
     if "--compile" in sys.argv:
         from core.compiler import Compiler
         compiler = Compiler()
         compiler.compile()
         return
-    parser = argparse.ArgumentParser(description="Supabase Audit Framework v1.0")
-    parser.add_argument("url", help="Target URL")
-    parser.add_argument("key", help="Anon Key")
-    parser.add_argument("--agent", help="AI Provider and Key (format: model:key, e.g., gemini-2.5-pro:AIza...)", default=None)
+    if "--wizard" in sys.argv:
+        from core.wizard import run_wizard
+        run_wizard()
+        return
+    if "--update" in sys.argv:
+        from core.updater import update_tool
+        update_tool()
+        return
+    parser = argparse.ArgumentParser(description="Supabase Audit Framework v1.0.0")
+    parser.add_argument("url", nargs="?", help="Target URL")
+    parser.add_argument("key", nargs="?", help="Anon Key")
+    parser.add_argument("--agent-provider", help="AI Provider (gemini, openai, anthropic, deepseek, ollama)", default="gemini", choices=["gemini", "openai", "anthropic", "deepseek", "ollama"])
+    parser.add_argument("--agent", help="AI Model Name or Key (depends on provider)", default=None)
+    parser.add_argument("--agent-key", help="AI API Key", default=None)
     parser.add_argument("--brute", nargs="?", const="default", help="Enable Bruteforce (optional: path to wordlist)")
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging")
     parser.add_argument("--json", action="store_true", help="Save report to JSON file")
@@ -62,23 +73,52 @@ async def main():
     parser.add_argument("--dump-all", action="store_true", help="Dump all rows found in RLS scan (default: limit 5)")
     parser.add_argument("--sniff", nargs="?", const=10, type=int, help="Enable Realtime Sniffer for N seconds (default: 10)")
     parser.add_argument("--check-config", action="store_true", help="Check PostgREST configuration (max_rows)")
+    parser.add_argument("--webui", action="store_true", help="Launch Web Management Dashboard")
+    parser.add_argument("--port", type=int, default=8080, help="Port for Web UI (default: 8080)")
+    parser.add_argument("--stealth", action="store_true", help="Enable Stealth Mode (JA3 Spoofing)")
+    parser.add_argument("--sarif", action="store_true", help="Generate SARIF report")
+    parser.add_argument("--update", action="store_true", help="Update the tool to the latest version")
+    parser.add_argument("--wizard", action="store_true", help="Run in wizard mode for beginners")
+    parser.add_argument("--random-agent", action="store_true", help="Use a random User-Agent header")
+    parser.add_argument("--level", type=int, default=1, help="Level of tests to perform (1-5, default 1)")
+    parser.add_argument("--tamper", help="Tamper script name (built-in) or path to file")
     args = parser.parse_args()
+    if args.webui:
+        from app.server import run_server
+        await run_server(port=args.port)
+        return
     if args.compile:
         return
-    ai_key = None
-    ai_model = "gemini-3-pro-preview"
-    if args.agent:
-        if ":" in args.agent:
-            parts = args.agent.split(":", 1)
-            ai_model = parts[0]
-            ai_key = parts[1]
-        else:
-            ai_key = args.agent
+    if not args.url or not args.key:
+        parser.error("the following arguments are required: url, key (unless --webui is used)")
+    
+    ai_key = args.agent_key
+    
+    # Auto-load API Key from Environment Variables if not provided
+    if not ai_key:
+        if args.agent_provider == "gemini":
+            ai_key = os.getenv("GEMINI_API_KEY")
+        elif args.agent_provider == "openai":
+            ai_key = os.getenv("OPENAI_API_KEY")
+        elif args.agent_provider == "anthropic":
+            ai_key = os.getenv("ANTHROPIC_API_KEY")
+        elif args.agent_provider == "deepseek":
+            ai_key = os.getenv("DEEPSEEK_API_KEY")
+            
+    ai_model = args.agent if args.agent else "gemini-3-pro-preview"
+    
+    # Backward compatibility for --agent model:key format if provider is gemini (default)
+    if args.agent and ":" in args.agent and not args.agent_key:
+        parts = args.agent.split(":", 1)
+        ai_model = parts[0]
+        ai_key = parts[1]
             
     config = TargetConfig(
-        url=args.url, key=args.key, ai_key=ai_key, ai_model=ai_model, 
+        url=args.url, key=args.key, ai_key=ai_key, ai_model=ai_model, ai_provider=args.agent_provider,
         verbose=args.verbose, proxy=args.proxy,
-        sniff_duration=args.sniff, check_config=args.check_config
+        sniff_duration=args.sniff, check_config=args.check_config,
+        stealth_mode=args.stealth, random_agent=args.random_agent,
+        level=args.level, tamper=args.tamper
     )
     if args.analyze:
         if not config.has_ai:
@@ -409,6 +449,14 @@ async def main():
             with open(html_filename, "w", encoding="utf-8") as f:
                 f.write(html_content)
             console.print(f"[bold green]✔ HTML Report saved: {html_filename}[/]")
+        if args.sarif:
+            from core.report import SARIFReporter
+            sarif_reporter = SARIFReporter()
+            sarif_content = sarif_reporter.generate(full_report)
+            sarif_filename = os.path.join(output_dir, f"audit_report_{timestamp}.sarif")
+            with open(sarif_filename, "w", encoding="utf-8") as f:
+                json.dump(sarif_content, f, indent=2)
+            console.print(f"[bold green]✔ SARIF Report saved: {sarif_filename}[/]")
         if args.gen_fixes and config.has_ai and "ai_analysis" in full_report:
             fix_gen = FixGenerator()
             sql_fixes = fix_gen.generate(full_report)

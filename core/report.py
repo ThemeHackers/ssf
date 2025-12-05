@@ -1,32 +1,32 @@
-import json
-from datetime import datetime
-from typing import Dict, Any
+import json 
+from datetime import datetime 
+from typing import Dict ,Any 
 
-VULN_TO_COMPLIANCE = {
-    "rls": {
-        "OWASP": "API1:2023 (BOLA)",
-        "SOC2": "CC6.1 (Access Control)"
-    },
-    "auth": {
-        "OWASP": "API3:2023 (BOPLA)",
-        "SOC2": "CC6.1 (Access Control)"
-    },
-    "rpc": {
-        "OWASP": "API8:2023 (Misconfiguration)",
-        "SOC2": "CC6.8 (Software Update)"
-    },
-    "storage": {
-        "OWASP": "API1:2023 (BOLA)",
-        "SOC2": "CC6.1 (Access Control)"
-    }
+VULN_TO_COMPLIANCE ={
+"rls":{
+"OWASP":"API1:2023 (BOLA)",
+"SOC2":"CC6.1 (Access Control)"
+},
+"auth":{
+"OWASP":"API3:2023 (BOPLA)",
+"SOC2":"CC6.1 (Access Control)"
+},
+"rpc":{
+"OWASP":"API8:2023 (Misconfiguration)",
+"SOC2":"CC6.8 (Software Update)"
+},
+"storage":{
+"OWASP":"API1:2023 (BOLA)",
+"SOC2":"CC6.1 (Access Control)"
+}
 }
 
-class HTMLReporter:
-    def generate(self, report: Dict[str, Any], diff: Dict[str, Any] = None) -> str:
-        findings = report.get("findings", {})
-        target = report.get("target", "Unknown")
-        timestamp = report.get("timestamp", datetime.now().isoformat())
-        css = """
+class HTMLReporter :
+    def generate (self ,report :Dict [str ,Any ],diff :Dict [str ,Any ]=None )->str :
+        findings =report .get ("findings",{})
+        target =report .get ("target","Unknown")
+        timestamp =report .get ("timestamp",datetime .now ().isoformat ())
+        css ="""
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
         :root {
             --bg-body: #0f172a;
@@ -272,7 +272,7 @@ class HTMLReporter:
         ul { padding-left: 20px; }
         li { margin-bottom: 8px; }
         """
-        html = f"""
+        html =f"""
         <!DOCTYPE html>
         <html lang="en">
         <head>
@@ -280,7 +280,7 @@ class HTMLReporter:
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Supabase Audit Report</title>
             <style>
-                   {css}</style>
+                   {css }</style>
         </head>
         <body>
             <div class="container">
@@ -288,47 +288,47 @@ class HTMLReporter:
                     <h1>Supabase Security Audit</h1>
                     <div class="meta">
                         <span>Target: <strong>
-                                              {target}</strong></span>
+                                              {target }</strong></span>
                         <span>•</span>
                         <span>Scanned: <strong>
-                                               {timestamp}</strong></span>
+                                               {timestamp }</strong></span>
                     </div>
                 </header>
                 <div class="summary-grid">
                     <div class="stat-card">
                         <div class="stat-value" style="color: var(--danger)">
-                                                                             {len([r for r in findings.get('rls', []) if r['risk'] == 'CRITICAL'])}</div>
+                                                                             {len ([r for r in findings .get ('rls',[])if r ['risk']=='CRITICAL'])}</div>
                         <div class="stat-label">Critical RLS</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-value" style="color: var(--warning)">
-                                                                              {len([r for r in findings.get('rpc', []) if r.get('risk') == 'CRITICAL'])}</div>
+                                                                              {len ([r for r in findings .get ('rpc',[])if r .get ('risk')=='CRITICAL'])}</div>
                         <div class="stat-label">Vuln RPCs</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-value" style="color: 
-                                                              { 'var(--danger)' if findings.get('auth', {}).get('leaked') else 'var(--success)' }">
-                            {'YES' if findings.get('auth', {}).get('leaked') else 'NO'}
+                                                              {'var(--danger)'if findings .get ('auth',{}).get ('leaked')else 'var(--success)'}">
+                            {'YES'if findings .get ('auth',{}).get ('leaked')else 'NO'}
                         </div>
                         <div class="stat-label">Auth Leak</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-value">
-                                                {len(findings.get('storage', []))}</div>
+                                                {len (findings .get ('storage',[]))}</div>
                         <div class="stat-label">Buckets</div>
                     </div>
                 </div>
         """
-        auth = findings.get("auth", {})
-        if auth.get("leaked"):
-            html += f"""
+        auth =findings .get ("auth",{})
+        if auth .get ("leaked"):
+            html +=f"""
             <div class="panel critical">
                 <h3 style="color: var(--danger); margin-top: 0;">⚠️ CRITICAL: Auth Data Leak Detected</h3>
                 <p>Found <strong>
-                                 {auth.get('count')}</strong> users exposed in public tables. Immediate action required.</p>
+                                 {auth .get ('count')}</strong> users exposed in public tables. Immediate action required.</p>
             </div>
             """
-        html += """
+        html +="""
         <h2>Row Level Security (RLS)</h2>
         <div class="table-container">
             <table>
@@ -343,55 +343,55 @@ class HTMLReporter:
                 </thead>
                 <tbody>
         """
-        for r in findings.get("rls", []):
-            risk_lower = r['risk'].lower()
-            badge_class = "safe"
-            if r['risk'] == 'CRITICAL': badge_class = "critical"
-            elif r['risk'] == 'HIGH': badge_class = "high"
-            elif r['risk'] == 'MEDIUM': badge_class = "medium"
-            elif r['risk'] == 'ACCEPTED': badge_class = "accepted"
-            risk_label = r['risk']
-            if r.get('accepted_reason'):
-                risk_label += f" ({r['accepted_reason']})"
-            html += f"""
+        for r in findings .get ("rls",[]):
+            risk_lower =r ['risk'].lower ()
+            badge_class ="safe"
+            if r ['risk']=='CRITICAL':badge_class ="critical"
+            elif r ['risk']=='HIGH':badge_class ="high"
+            elif r ['risk']=='MEDIUM':badge_class ="medium"
+            elif r ['risk']=='ACCEPTED':badge_class ="accepted"
+            risk_label =r ['risk']
+            if r .get ('accepted_reason'):
+                risk_label +=f" ({r ['accepted_reason']})"
+            html +=f"""
             <tr>
                 <td style="font-weight: 600; color: var(--text-main);">
-                                                                       {r['table']}</td>
+                                                                       {r ['table']}</td>
                 <td>
-                    {'<span style="color: var(--success)">✔ Allowed</span>' if r['read'] else '<span style="color: var(--text-muted)">-</span>'}</td>
+                    {'<span style="color: var(--success)">✔ Allowed</span>'if r ['read']else '<span style="color: var(--text-muted)">-</span>'}</td>
                 <td>
-                    {'<span style="color: var(--danger); font-weight: bold;">⚠ LEAK</span>' if r['write'] else '<span style="color: var(--text-muted)">-</span>'}</td>
+                    {'<span style="color: var(--danger); font-weight: bold;">⚠ LEAK</span>'if r ['write']else '<span style="color: var(--text-muted)">-</span>'}</td>
                 <td><span class="badge 
-                                       {badge_class}">{risk_label}</span></td>
+                                       {badge_class }">{risk_label }</span></td>
                 <td>
                     <span class="badge" style="background: #334155; color: #cbd5e1;">
-                                                                                     {VULN_TO_COMPLIANCE['rls']['OWASP']}</span>
+                                                                                     {VULN_TO_COMPLIANCE ['rls']['OWASP']}</span>
                     <span class="badge" style="background: #334155; color: #cbd5e1;">
-                                                                                     {VULN_TO_COMPLIANCE['rls']['SOC2']}</span>
+                                                                                     {VULN_TO_COMPLIANCE ['rls']['SOC2']}</span>
                 </td>
             </tr>
             """
-        html += "</tbody></table></div>"
-        if diff:
-            html += '<h2>Comparison with Previous Scan</h2><div class="panel">'
-            new_rls = diff.get("rls", {}).get("new", [])
-            resolved_rls = diff.get("rls", {}).get("resolved", [])
-            if new_rls:
-                html += "<h3 style='color: var(--danger)'>New Issues</h3><ul>"
-                for item in new_rls:
-                    html += f"<li>New RLS finding in table: <strong>{item['table']}</strong> ({item['risk']})</li>"
-                html += "</ul>"
-            elif resolved_rls:
-                html += "<h3 style='color: var(--success)'>Resolved Issues</h3><ul>"
-                for item in resolved_rls:
-                    html += f"<li>Resolved RLS finding in table: <strong>{item['table']}</strong></li>"
-                html += "</ul>"
-            else:
-                html += "<p style='color: var(--text-muted)'>No changes detected.</p>"
-            html += "</div>"
-        ai_analysis = report.get("ai_analysis", {})
-        if ai_analysis and "error" not in ai_analysis:
-            html += f"""
+        html +="</tbody></table></div>"
+        if diff :
+            html +='<h2>Comparison with Previous Scan</h2><div class="panel">'
+            new_rls =diff .get ("rls",{}).get ("new",[])
+            resolved_rls =diff .get ("rls",{}).get ("resolved",[])
+            if new_rls :
+                html +="<h3 style='color: var(--danger)'>New Issues</h3><ul>"
+                for item in new_rls :
+                    html +=f"<li>New RLS finding in table: <strong>{item ['table']}</strong> ({item ['risk']})</li>"
+                html +="</ul>"
+            elif resolved_rls :
+                html +="<h3 style='color: var(--success)'>Resolved Issues</h3><ul>"
+                for item in resolved_rls :
+                    html +=f"<li>Resolved RLS finding in table: <strong>{item ['table']}</strong></li>"
+                html +="</ul>"
+            else :
+                html +="<p style='color: var(--text-muted)'>No changes detected.</p>"
+            html +="</div>"
+        ai_analysis =report .get ("ai_analysis",{})
+        if ai_analysis and "error"not in ai_analysis :
+            html +=f"""
             <div class="ai-section" style="background: #ffffff; border: 1px solid #e2e8f0; color: #0f172a;">
                 <div class="ai-header" style="border-bottom: 1px solid #e2e8f0;">
                     <span style="font-size: 2rem;">🤖</span>
@@ -399,56 +399,156 @@ class HTMLReporter:
                 </div>
                 <div class="ai-content" style="color: #334155;">
                     <p><strong>Risk Level:</strong> <span class="badge 
-                                                                       {ai_analysis.get('risk_level', 'LOW').lower()}">{ai_analysis.get('risk_level', 'Unknown')}</span></p>
+                                                                       {ai_analysis .get ('risk_level','LOW').lower ()}">{ai_analysis .get ('risk_level','Unknown')}</span></p>
                     <p>
-                       {ai_analysis.get('summary', '').replace(chr(10), '<br>')}</p>
+                       {ai_analysis .get ('summary','').replace (chr (10 ),'<br>')}</p>
                 </div>
             """
-            fixes = ai_analysis.get("fixes", {})
-            if fixes:
-                html += "<div style='margin-top: 30px;'><h4 style='color: #4c1d95; margin-bottom: 15px;'>🛡️ Recommended Remediation</h4>"
-                for category, fix in fixes.items():
-                    html += f"""
+            fixes =ai_analysis .get ("fixes",{})
+            if fixes :
+                html +="<div style='margin-top: 30px;'><h4 style='color: #4c1d95; margin-bottom: 15px;'>🛡️ Recommended Remediation</h4>"
+                for category ,fix in fixes .items ():
+                    html +=f"""
                     <div class="remediation-box" style="background: #f8fafc; border-left: 4px solid #8b5cf6;">
                         <span class="remediation-title" style="color: #6d28d9;">
-                                                                                {category.upper()}</span>
+                                                                                {category .upper ()}</span>
                         <pre style="background: #f1f5f9; color: #0f172a; border: 1px solid #e2e8f0;">
-                                                                                                     {fix}</pre>
+                                                                                                     {fix }</pre>
                     </div>
                     """
-                html += "</div>"
-            html += "</div>"
-        html += """
+                html +="</div>"
+            html +="</div>"
+        html +="""
             </div>
         </body>
         </html>
         """
-        return html
-class FixGenerator:
-    def generate(self, report: Dict[str, Any]) -> str:
-        ai_analysis = report.get("ai_analysis", {})
-        fixes = ai_analysis.get("fixes", {})
-        if not fixes:
+        return html 
+class FixGenerator :
+    def generate (self ,report :Dict [str ,Any ])->str :
+        ai_analysis =report .get ("ai_analysis",{})
+        fixes =ai_analysis .get ("fixes",{})
+        if not fixes :
             return "-- No automated fixes generated by AI."
-        timestamp = datetime.now().isoformat()
-        sql_content = f"""/*
+        timestamp =datetime .now ().isoformat ()
+        sql_content =f"""/*
 Supabase Security Fix Script
 Generated by SSF on 
-                    {timestamp}
+                    {timestamp }
 WARNING: Review all commands before executing!
 This script is wrapped in a transaction to ensure atomicity.
 */
 BEGIN;
 """
-        order = ["auth", "rls", "rpc", "realtime"]
-        for category in order:
-            if category in fixes:
-                sql_content += f"\\n/* --- {category.upper()} FIXES --- */\\n"
-                sql_content += fixes[category] + "\\n"
-        for category, sql in fixes.items():
-            if category not in order:
-                sql_content += f"\\n/* --- {category.upper()} FIXES --- */\\n"
-                sql_content += sql + "\\n"
-        sql_content += "\\nCOMMIT;\\n"
-        return sql_content
-        
+        order =["auth","rls","rpc","realtime"]
+        for category in order :
+            if category in fixes :
+                sql_content +=f"\\n/* --- {category .upper ()} FIXES --- */\\n"
+                sql_content +=fixes [category ]+"\\n"
+        for category ,sql in fixes .items ():
+            if category not in order :
+                sql_content +=f"\\n/* --- {category .upper ()} FIXES --- */\\n"
+                sql_content +=sql +"\\n"
+        sql_content +="\\nCOMMIT;\\n"
+        return sql_content 
+
+class SARIFReporter :
+    def generate (self ,report :Dict [str ,Any ])->str :
+        findings =report .get ("findings",{})
+        target =report .get ("target","Unknown")
+
+        runs =[]
+        results =[]
+
+
+        for r in findings .get ("rls",[]):
+            if r ["risk"]in ["CRITICAL","HIGH","MEDIUM"]:
+                results .append ({
+                "ruleId":"SSF-RLS-001",
+                "level":"error"if r ["risk"]=="CRITICAL"else "warning",
+                "message":{
+                "text":f"RLS Issue on table {r ['table']}: {r ['risk']}"
+                },
+                "locations":[{
+                "physicalLocation":{
+                "artifactLocation":{
+                "uri":f"database/tables/{r ['table']}"
+                }
+                }
+                }]
+                })
+
+
+        auth =findings .get ("auth",{})
+        if auth .get ("leaked"):
+             results .append ({
+             "ruleId":"SSF-AUTH-001",
+             "level":"error",
+             "message":{
+             "text":f"Auth Leak Detected: {auth .get ('count')} users exposed"
+             },
+             "locations":[{
+             "physicalLocation":{
+             "artifactLocation":{
+             "uri":"auth/users"
+             }
+             }
+             }]
+             })
+
+
+        for r in findings .get ("rpc",[]):
+             if r .get ("risk")in ["CRITICAL","HIGH"]:
+                results .append ({
+                "ruleId":"SSF-RPC-001",
+                "level":"error"if r ["risk"]=="CRITICAL"else "warning",
+                "message":{
+                "text":f"Vulnerable RPC: {r ['name']}"
+                },
+                "locations":[{
+                "physicalLocation":{
+                "artifactLocation":{
+                "uri":f"database/functions/{r ['name']}"
+                }
+                }
+                }]
+                })
+
+        sarif ={
+        "$schema":"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+        "version":"2.1.0",
+        "runs":[{
+        "tool":{
+        "driver":{
+        "name":"Supabase Security Framework (SSF)",
+        "version":"3.0",
+        "rules":[
+        {
+        "id":"SSF-RLS-001",
+        "name":"Row Level Security Misconfiguration",
+        "shortDescription":{
+        "text":"RLS policies allow unauthorized access."
+        }
+        },
+        {
+        "id":"SSF-AUTH-001",
+        "name":"Authentication Leak",
+        "shortDescription":{
+        "text":"User data is exposed to public."
+        }
+        },
+        {
+        "id":"SSF-RPC-001",
+        "name":"Vulnerable RPC",
+        "shortDescription":{
+        "text":"RPC function has security vulnerabilities."
+        }
+        }
+        ]
+        }
+        },
+        "results":results 
+        }]
+        }
+
+        return json .dumps (sarif ,indent =2 )

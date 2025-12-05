@@ -4,3 +4,12 @@ pydantic
 google-generativeai
 python-dotenv
 websockets
+fastapi
+uvicorn
+python-multipart
+curl_cffi
+PyJWT
+
+
+
+
