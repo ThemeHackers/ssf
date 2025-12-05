@@ -38,7 +38,7 @@
 You can install `ssf` directly from PyPI using pip:
 
 ```bash
-pip3 install supabase-audit-framework
+pip3 install supabase-audit-framework --upgrade
 ```
 
 ### From Source
