@@ -47,7 +47,7 @@ async def main():
         from ssf.core.updater import update_tool
         update_tool()
         return
-    parser = argparse.ArgumentParser(description="Supabase Audit Framework v1.1.11")
+    parser = argparse.ArgumentParser(description="Supabase Audit Framework v1.1.12")
     parser.add_argument("url", nargs="?", help="Target URL")
     parser.add_argument("key", nargs="?", help="Anon Key")
     parser.add_argument("--agent-provider", help="AI Provider (gemini, openai, anthropic, deepseek, ollama)", default="gemini", choices=["gemini", "openai", "anthropic", "deepseek", "ollama"])
