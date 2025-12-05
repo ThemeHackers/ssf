@@ -1,7 +1,7 @@
 from typing import Dict, Any, List
 from core.base import BaseScanner
 
-class SecurityHeadersPlugin(BaseScanner):
+class SecurityHeadersScanner(BaseScanner):
     """
     Plugin to check for missing or insecure HTTP security headers.
     """
