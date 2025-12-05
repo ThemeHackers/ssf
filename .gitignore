@@ -1,0 +1,36 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+
+
+# Environment Variables
+.env
+
+# Reports & Logs
+audit_report_*.json
+audit_report_*.html
+baseline.json
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Snyk Security Extension - AI Rules (auto-generated)
+.github/instructions/snyk_rules.instructions.md
+
+# Packaging
+dist/
+build/
+*.egg-info/
+deploy.sh
+reports/
