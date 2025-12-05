@@ -43,10 +43,7 @@ async def main():
         from ssf.core.wizard import run_wizard
         run_wizard()
         return
-    if "--update" in sys.argv:
-        from ssf.core.updater import update_tool
-        update_tool()
-        return
+
     parser = argparse.ArgumentParser(description="Supabase Audit Framework v1.1.12")
     parser.add_argument("url", nargs="?", help="Target URL")
     parser.add_argument("key", nargs="?", help="Anon Key")
@@ -78,7 +75,7 @@ async def main():
     parser.add_argument("--port", type=int, default=8080, help="Port for Web UI (default: 8080)")
     parser.add_argument("--stealth", action="store_true", help="Enable Stealth Mode (JA3 Spoofing)")
     parser.add_argument("--sarif", action="store_true", help="Generate SARIF report")
-    parser.add_argument("--update", action="store_true", help="Update the tool to the latest version")
+
     parser.add_argument("--wizard", action="store_true", help="Run in wizard mode for beginners")
     parser.add_argument("--random-agent", action="store_true", help="Use a random User-Agent header")
     parser.add_argument("--level", type=int, default=1, help="Level of tests to perform (1-5, default 1)")
