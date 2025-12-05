@@ -325,4 +325,5 @@ The developers assume no liability and are not responsible for any misuse or dam
 
 ## 👉 Github
 
-[See Project](https://github.com/ThemeHackers/ssf)
+[See Project Github](https://github.com/ThemeHackers/ssf)
+[Python Package Index](https://pypi.org/project/supabase-audit-framework/)
