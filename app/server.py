@@ -425,7 +425,12 @@ def get_exploit_results (scan_id :str =None ):
     target_dir =None 
 
     if scan_id :
-        target_dir =os .path .join (reports_dir ,scan_id )
+        joined_path = os.path.join(reports_dir, scan_id)
+        target_dir = os.path.normpath(joined_path)
+        reports_dir_abs = os.path.abspath(reports_dir)
+        target_dir_abs = os.path.abspath(target_dir)
+        if not target_dir_abs.startswith(reports_dir_abs):
+            raise HTTPException(status_code=400, detail="Invalid scan_id")
     elif state .current_report :
         target_ts =state .current_report .get ("timestamp")
         if os .path .exists (reports_dir ):
@@ -444,9 +449,13 @@ def get_exploit_results (scan_id :str =None ):
 
     if target_dir :
         results_file =os .path .join (target_dir ,"exploit_results.json")
-        if os .path .exists (results_file ):
-            with open (results_file ,"r")as f :
-                return json .load (f )
+        results_file = os.path.normpath(results_file)
+        results_file_abs = os.path.abspath(results_file)
+        if not results_file_abs.startswith(os.path.abspath(target_dir)):
+            raise HTTPException(status_code=400, detail="Invalid scan directory (results file path)")
+        if os.path.exists(results_file):
+            with open(results_file, "r") as f:
+                return json.load(f)
 
     return []
 
