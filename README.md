@@ -322,3 +322,7 @@ Once you save this file in the `plugins/` folder, **ssf** will:
 ## ⚠️ Disclaimer
 
 The developers assume no liability and are not responsible for any misuse or damage caused by this program. Use responsibly.
+
+## 👉 Github
+
+[See Project](https://github.com/ThemeHackers/ssf)
