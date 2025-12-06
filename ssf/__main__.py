@@ -44,7 +44,7 @@ async def main():
         run_wizard()
         return
 
-    parser = argparse.ArgumentParser(description="Supabase Audit Framework v1.1.15")
+    parser = argparse.ArgumentParser(description="Supabase Audit Framework v1.2.0")
     parser.add_argument("url", nargs="?", help="Target URL")
     parser.add_argument("key", nargs="?", help="Anon Key")
     parser.add_argument("--agent-provider", help="AI Provider (gemini, openai, anthropic, deepseek, ollama)", default="gemini", choices=["gemini", "openai", "anthropic", "deepseek", "ollama"])
@@ -89,7 +89,8 @@ async def main():
     if args.compile:
         return
     if not args.url or not args.key:
-        parser.error("the following arguments are required: url, key (unless --webui is used)")
+        if not args.webui and not args.analyze:
+            parser.error("the following arguments are required: url, key (unless --webui or --analyze is used)")
     
     ai_key = args.agent_key
     
@@ -112,44 +113,84 @@ async def main():
         ai_key = parts[1]
             
     config = TargetConfig(
-        url=args.url, key=args.key, ai_key=ai_key, ai_model=ai_model, ai_provider=args.agent_provider,
+        url=args.url or "http://localhost", key=args.key or "dummy", ai_key=ai_key, ai_model=ai_model, ai_provider=args.agent_provider,
         verbose=args.verbose, proxy=args.proxy,
         sniff_duration=args.sniff, check_config=args.check_config,
         stealth_mode=args.stealth, random_agent=args.random_agent,
         level=args.level, tamper=args.tamper
     )
     if args.analyze:
-        if not config.has_ai:
-            console.print("[bold red][!] --analyze requires --agent (AI) to be enabled.[/]")
-            return
-        from ssf.core.utils import get_code_files
-        console.print(f"[cyan][*] Reading code files from: {args.analyze}[/]")
-        code_files = get_code_files(args.analyze)
-        if not code_files:
-            console.print("[yellow][!] No supported code files found.[/]")
-            return
-        console.print(f"[green][+] Found {len(code_files)} files to analyze.[/]")
-        agent = AIAgent(api_key=config.ai_key, model_name=config.ai_model)
-        ai_text = Markdown("")
-        panel = Panel(ai_text, title="🤖 AI Analyzing Code...", border_style="magenta")
-        full_ai_response = ""
-        def update_ai_output_markdown(chunk):
-            nonlocal full_ai_response
-            full_ai_response += chunk
-            panel.renderable = Markdown(full_ai_response)
-        from rich.live import Live
-        with Live(panel, refresh_per_second=8, console=console, auto_refresh=True):
-             report = await agent.analyze_code(code_files, stream_callback=update_ai_output_markdown)
-        if "error" not in report:
-            console.print(Panel(Markdown(f"### Code Risk: {report.get('risk_level')}\n\n{report.get('summary')}"), title="🤖 Static Analysis Results", border_style="magenta"))
+        from ssf.scanners.sast import SASTScanner
+        
+        console.print(f"[cyan][*] Starting Static Analysis on: {args.analyze}[/]")
+        sast_scanner = SASTScanner(target_path=args.analyze, verbose=config.verbose)
+        sast_report = sast_scanner.scan()
+        
+        if sast_report["findings"]:
+            console.print(Panel(
+                f"[bold red]Found {len(sast_report['findings'])} potential issues via Static Analysis (Offline)[/]",
+                title="🔍 SAST Results", border_style="red"
+            ))
+            t_sast = Table(show_header=True, header_style="bold magenta")
+            t_sast.add_column("File")
+            t_sast.add_column("Line")
+            t_sast.add_column("Issue")
+            t_sast.add_column("Severity")
+            
+            for f in sast_report["findings"]:
+                color = "red" if f['severity'] == "Critical" else "yellow"
+                t_sast.add_row(f['file'], str(f['line']), f['issue'], f"[{color}]{f['severity']}[/]")
+            
+            console.print(t_sast)
+        else:
+            console.print("[green][✔] No issues found by Offline SAST.[/]")
+
+        if config.has_ai:
+            from ssf.core.utils import get_code_files
+            console.print(f"[cyan][*] Elevating to AI Deep Analysis...[/]")
+            
+            code_files = get_code_files(args.analyze)
+            if not code_files:
+                console.print("[yellow][!] No supported code files found for AI analysis.[/]")
+                return
+
+            agent = AIAgent(api_key=config.ai_key, model_name=config.ai_model)
+            ai_text = Markdown("")
+            panel = Panel(ai_text, title="🤖 AI Analyzing Code...", border_style="magenta")
+            full_ai_response = ""
+            
+            def update_ai_output_markdown(chunk):
+                nonlocal full_ai_response
+                full_ai_response += chunk
+                panel.renderable = Markdown(full_ai_response)
+            
+            from rich.live import Live
+            with Live(panel, refresh_per_second=8, console=console, auto_refresh=True):
+                 report = await agent.analyze_code(code_files, stream_callback=update_ai_output_markdown)
+            
+            if "error" not in report:
+                console.print(Panel(Markdown(f"### Code Risk: {report.get('risk_level')}\n\n{report.get('summary')}"), title="🤖 AI Analysis Results", border_style="magenta"))
+                
+                report["sast_findings"] = sast_report["findings"]
+                
+                import os
+                timestamp = int(time.time())
+                output_dir = f"audit_report_{timestamp}"
+                os.makedirs(output_dir, exist_ok=True)
+                filename = os.path.join(output_dir, f"code_analysis_{timestamp}.json")
+                with open(filename, "w", encoding="utf-8") as f:
+                    json.dump(report, f, indent=2)
+                console.print(f"\n[bold green]✔ Hybrid Code Analysis Report saved: {filename}[/]")
+            return 
+        else:
             import os
             timestamp = int(time.time())
             output_dir = f"audit_report_{timestamp}"
             os.makedirs(output_dir, exist_ok=True)
-            filename = os.path.join(output_dir, f"code_analysis_{timestamp}.json")
+            filename = os.path.join(output_dir, f"sast_report_{timestamp}.json")
             with open(filename, "w", encoding="utf-8") as f:
-                json.dump(report, f, indent=2)
-            console.print(f"\n[bold green]✔ Code Analysis Report saved: {filename}[/]")
+                json.dump(sast_report, f, indent=2)
+            console.print(f"\n[bold green]✔ SAST Report saved: {filename}[/]")
         return 
     full_report = {"target": config.url, "timestamp": datetime.now().isoformat(), "findings": {}}
     kb = KnowledgeBase()
@@ -158,7 +199,7 @@ async def main():
             console.print(f"[green][*] Knowledge Base loaded from {args.knowledge}[/]")
         else:
             console.print(f"[red][!] Failed to load Knowledge Base from {args.knowledge}[/]")
-    console.print(Panel.fit("[bold white]Supabase Audit Framework v1.1.15[/]\n[cyan]RLS • Auth • Storage • RPC • Realtime • AI[/]", border_style="blue"))
+    console.print(Panel.fit("[bold white]Supabase Audit Framework v1.2.0[/]\n[cyan]RLS • Auth • Storage • RPC • Realtime • AI[/]", border_style="blue"))
     shared_context = {}
     async with SessionManager(config) as client:
         with Progress(SpinnerColumn(), TextColumn("[cyan]Discovery Phase..."), console=console) as p:
