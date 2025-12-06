@@ -7,7 +7,6 @@ This file explains the security policy of ssf.
 | Version | Supported          |
 | ------- | ------------------ |
 | Latest  | :white_check_mark: |
-| = 1.0.0   | :x:                |
 
 ## Reporting a Vulnerability
 If you discover a security vulnerability within ssf, please send an e-mail to **tigerzaza5678@gmail.com**.
