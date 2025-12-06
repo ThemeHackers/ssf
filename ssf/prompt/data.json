@@ -1,0 +1,130 @@
+
+{
+    "security_knowledge_base": {
+        "introduction": "This knowledge base provides deep technical context for auditing Supabase instances. It covers common misconfigurations, vulnerabilities, and best practices.",
+        "categories": {
+            "rls": {
+                "title": "Row Level Security (RLS)",
+                "criticality": "Critical",
+                "description": "RLS is the primary defense mechanism in Supabase/PostgreSQL. It restricts data access based on the user's authentication state.",
+                "common_vulnerabilities": [
+                    {
+                        "issue": "RLS Disabled",
+                        "description": "Table has RLS disabled, allowing any user (anon/authenticated) full access if permissions are granted to public roles.",
+                        "impact": {
+                            "technical": "Unrestricted read/write access to all rows.",
+                            "business": "Complete data breach, data loss, compliance violation (GDPR/CCPA)."
+                        },
+                        "remediation": "ALTER TABLE <table> ENABLE ROW LEVEL SECURITY;"
+                    },
+                    {
+                        "issue": "Permissive Policies (true)",
+                        "description": "Policy uses 'USING (true)' or 'WITH CHECK (true)' for public roles.",
+                        "impact": {
+                            "technical": "Allows unrestricted access to rows, bypassing the purpose of RLS.",
+                            "business": "Data leakage, unauthorized data modification."
+                        },
+                        "remediation": "Restrict policies to `auth.uid() = user_id` or specific roles."
+                    },
+                    {
+                        "issue": "Service Role Exposure",
+                        "description": "Client-side code or policies rely on service_role key which bypasses RLS.",
+                        "impact": {
+                            "technical": "Complete bypass of all security policies.",
+                            "business": "Total system compromise."
+                        },
+                        "remediation": "Never expose service_role key. Use RLS policies for all client access."
+                    }
+                ],
+                "best_practices": [
+                    "Enable RLS on ALL tables in the 'public' schema.",
+                    "Default to 'deny all' by creating no policies initially.",
+                    "Use `auth.uid()` to scope data to the owner.",
+                    "Use `auth.jwt()` to check for custom claims or roles."
+                ]
+            },
+            "auth": {
+                "title": "Authentication & User Management",
+                "criticality": "High",
+                "description": "Manages user identity and access tokens.",
+                "common_vulnerabilities": [
+                    {
+                        "issue": "Email Confirmation Disabled",
+                        "description": "Users can sign up with fake emails.",
+                        "impact": {
+                            "technical": "Bot account creation, spam, resource exhaustion.",
+                            "business": "Database pollution, increased costs, reputation harm."
+                        },
+                        "remediation": "Enable 'Confirm Email' in Auth settings."
+                    },
+                    {
+                        "issue": "Weak Password Policy",
+                        "description": "Allows short or simple passwords.",
+                        "impact": {
+                            "technical": "Susceptible to brute-force or credential stuffing.",
+                            "business": "Account takeovers."
+                        },
+                        "remediation": "Enforce minimum length (e.g., 8+ chars) and complexity."
+                    }
+                ]
+            },
+            "rpc": {
+                "title": "Remote Procedure Calls (RPC)",
+                "criticality": "High",
+                "description": "PostgreSQL functions exposed via the API.",
+                "common_vulnerabilities": [
+                    {
+                        "issue": "SECURITY DEFINER Misuse",
+                        "description": "Function runs with the privileges of the creator (usually postgres/admin) instead of the caller.",
+                        "impact": {
+                            "technical": "Privilege escalation. A low-privilege user can perform admin actions.",
+                            "business": "Unauthorized admin access, data destruction."
+                        },
+                        "remediation": "Use 'SECURITY INVOKER' by default. If DEFINER is needed, set 'search_path' securely and revoke public execution."
+                    },
+                    {
+                        "issue": "Public Execute Permissions",
+                        "description": "Sensitive internal functions are executable by 'anon' or 'authenticated'.",
+                        "impact": {
+                            "technical": "Attackers can trigger internal logic, potentially modifying state.",
+                            "business": "Business logic bypass, data corruption."
+                        },
+                        "remediation": "REVOKE EXECUTE ON FUNCTION <name> FROM public, anon, authenticated;"
+                    }
+                ]
+            },
+            "realtime": {
+                "title": "Realtime & WebSockets",
+                "criticality": "Medium",
+                "description": "Broadcasts database changes to clients.",
+                "common_vulnerabilities": [
+                    {
+                        "issue": "Unrestricted Channels",
+                        "description": "Broadcasting all changes (realtime:*) to public.",
+                        "impact": {
+                            "technical": "Leaks all INSERT/UPDATE/DELETE events to anyone listening.",
+                            "business": "Real-time data leakage."
+                        },
+                        "remediation": "Configure RLS for the 'realtime' publication or restrict replication to specific tables."
+                    }
+                ]
+            },
+            "storage": {
+                "title": "File Storage",
+                "criticality": "Medium",
+                "description": "Object storage for files/images.",
+                "common_vulnerabilities": [
+                    {
+                        "issue": "Public Buckets",
+                        "description": "Bucket is set to 'public', bypassing auth checks for downloads.",
+                        "impact": {
+                            "technical": "Anyone can list and download files.",
+                            "business": "Leak of private documents or user assets."
+                        },
+                        "remediation": "Make buckets private and use RLS policies on `storage.objects`."
+                    }
+                ]
+            }
+        }
+    }
+}

@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "supabase-audit-framework"
+version = "1.2.2"
+description = "Supabase Audit Framework"
+readme = "README.md"
+authors = [
+  { name="Author", email="tigerzaza5678@gmail.com" },
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+requires-python = ">=3.9"
+dependencies = [
+    "httpx",
+    "rich",
+    "pydantic",
+    "google-generativeai",
+    "python-dotenv",
+    "websockets",
+    "fastapi",
+    "uvicorn",
+    "python-multipart",
+    "curl_cffi",
+    "PyJWT",
+]
+
+[project.scripts]
+ssf = "ssf.__main__:main_sync"
+
+[tool.setuptools]
+packages = ["ssf", "ssf.core", "ssf.scanners", "ssf.plugins", "ssf.app", "ssf.prompt"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+ssf = ["*.txt", "*.json"]
