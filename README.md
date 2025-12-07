@@ -1,4 +1,4 @@
-# Supabase Security Framework (ssf) v1.2.8
+# Supabase Security Framework (ssf) v1.2.9
 
 ![Banner](https://img.shields.io/badge/Supabase-Security-green) ![Python](https://img.shields.io/badge/Python-3.10%2B-blue) ![License](https://img.shields.io/badge/License-MIT-yellow) ![Status](https://img.shields.io/badge/Maintained-Yes-brightgreen)
 
@@ -118,6 +118,91 @@ ssf <URL> <KEY> --json > baseline.json
 ssf <URL> <KEY> --json --diff baseline.json
 ```
 
+### 🚀 Automated GitHub Actions Workflow
+Automatically run security audits on every push and pull request using GitHub Actions.
+
+Create `.github/workflows/supabase-security.yml`:
+
+```yaml
+name: Supabase Security Audit
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '0 0 * * 0'
+
+jobs:
+  security-audit:
+    name: SSF Scan & Report
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install SSF Framework
+        run: pip3 install supabase-audit-framework --upgrade
+
+      - name: Run Security Scan
+        continue-on-error: true
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [[ -z "$SUPABASE_URL" ]]; then
+            echo "::error::Secret SUPABASE_URL is empty! Check Environment settings."
+            exit 1
+          fi
+
+          set +e
+          
+          ssf $SUPABASE_URL $SUPABASE_KEY \
+            --ci \
+            --ci-format github \
+            --fail-on HIGH \
+            --sarif \
+            --json
+          
+          EXIT_CODE=$?
+          
+          mv audit_report_*/*.sarif results.sarif
+          mv audit_report_*/*.json scan_results.json
+          
+          exit $EXIT_CODE
+
+      - name: Upload SARIF to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: results.sarif
+          category: ssf-audit
+
+      - name: Upload Raw JSON Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ssf-full-report
+          path: scan_results.json
+          retention-days: 14
+```
+
+**Setup Instructions:**
+1.  Go to **Settings > Secrets and variables > Actions** in your repository.
+2.  Add `SUPABASE_URL` and `SUPABASE_ANON_KEY`.
+3.  The workflow will now run on every commit and upload results to **Security > Code Scanning Alerts**.
+
 ### 🧠 Static Code Analysis
 Scan your local source code for Supabase-specific vulnerabilities (e.g., hardcoded keys, weak RLS definitions in migrations):
 ```bash
@@ -158,6 +243,8 @@ ssf <URL> <KEY> --agent-provider gemini --agent-key "KEY" --threat-model
 ssf <URL> <KEY> --webui
 # Optional: Specify port
 ssf <URL> <KEY> --webui --port 9090
+# Optional: For Collaboration
+ssf <URL> <KEY> --webui --ngrok --auth username:password
 ```
 
 ## Managing Accepted Risks
