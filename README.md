@@ -1,4 +1,4 @@
-# Supabase Security Framework (ssf) v1.2.13
+# Supabase Security Framework (ssf) v1.2.14
 
 ![Banner](https://img.shields.io/badge/Supabase-Security-green) ![Python](https://img.shields.io/badge/Python-3.10%2B-blue) ![License](https://img.shields.io/badge/License-MIT-yellow) ![Status](https://img.shields.io/badge/Maintained-Yes-brightgreen)
 

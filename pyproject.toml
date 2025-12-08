@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "supabase-audit-framework"
-version = "1.2.13"
+version = "1.2.14"
 description = "Supabase Audit Framework"
 readme = "README.md"
 authors = [
