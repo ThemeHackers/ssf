@@ -533,18 +533,40 @@ function createSection(title, count) {
 function createFindingCard(title, risk, details) {
     const el = document.createElement('div');
     el.className = 'finding-item';
-    el.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem">
-            <strong>${escapeHtml(title)}</strong>
-            <span class="risk-badge risk-${escapeHtml(risk)}">${escapeHtml(risk)}</span>
-        </div>
-        <p style="color:var(--text-secondary); font-size:0.9rem">
-            ${details}
-        </p>
-        <div style="text-align:right; margin-top:0.5rem">
-             <button class="btn-secondary" style="font-size:0.8rem; padding:0.2rem 0.5rem" onclick="acceptRisk('${escapeHtml(risk)}:${escapeHtml(title).replace(/'/g, "\\'")}')">Accept Risk</button>
-        </div>
-    `;
+
+
+    const header = document.createElement('div');
+    header.style.cssText = "display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem";
+
+    const strong = document.createElement('strong');
+    strong.textContent = escapeHtml(title); 
+
+    const badge = document.createElement('span');
+    badge.className = `risk-badge risk-${escapeHtml(risk)}`; 
+    badge.textContent = escapeHtml(risk);
+
+    header.appendChild(strong);
+    header.appendChild(badge);
+    el.appendChild(header);
+
+    const p = document.createElement('p');
+    p.style.cssText = "color:var(--text-secondary); font-size:0.9rem";
+    p.innerHTML = details;
+    el.appendChild(p);
+
+
+    const btnDiv = document.createElement('div');
+    btnDiv.style.cssText = "text-align:right; margin-top:0.5rem";
+
+    const btn = document.createElement('button');
+    btn.className = 'btn-secondary';
+    btn.style.cssText = "font-size:0.8rem; padding:0.2rem 0.5rem";
+    btn.textContent = "Accept Risk";
+    btn.onclick = () => acceptRisk(risk + ':' + title);
+
+    btnDiv.appendChild(btn);
+    el.appendChild(btnDiv);
+
     return el;
 }
 
@@ -590,10 +612,10 @@ async function loadHistory() {
 
 
             document.getElementById('report-content').innerHTML = `
-                <div class="empty-state">
+        < div class="empty-state" >
                     <div class="empty-icon">📊</div>
                     <p>No report loaded. Run a scan to see results.</p>
-                </div>`;
+                </div > `;
 
             return;
         }
@@ -604,14 +626,14 @@ async function loadHistory() {
             el.className = 'finding-item';
             el.style.cursor = 'pointer';
             el.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center; width:100%" onclick="loadReport('${escapeHtml(scan.id)}')">
+        < div style = "display:flex; justify-content:space-between; align-items:center; width:100%" onclick = "loadReport('${escapeHtml(scan.id)}')" >
                     <div>
                         <strong>Scan ${escapeHtml(scan.id)}</strong>
                         <div style="font-size:0.8em; opacity:0.7">${escapeHtml(date)}</div>
                     </div>
                     <button class="btn-icon delete-btn" onclick="deleteScan('${escapeHtml(scan.id)}', event)" title="Delete Scan" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.2em; padding:0.5rem;">🗑️</button>
-                </div>
-            `;
+                </div >
+        `;
             container.appendChild(el);
         });
     } catch (e) {
@@ -628,7 +650,7 @@ async function deleteScan(scanId, event) {
     if (!confirm('Are you sure you want to delete this scan? This action cannot be undone.')) return;
 
     try {
-        const res = await fetch(`/api/history/${scanId}`, { method: 'DELETE' });
+        const res = await fetch(`/ api / history / ${scanId} `, { method: 'DELETE' });
         if (res.ok) {
             loadHistory();
             addLog('Scan deleted successfully', 'success');
@@ -694,7 +716,7 @@ async function loadExploits() {
     try {
         let url = '/api/exploits';
         if (currentReport && currentReport.scan_id) {
-            url += `?scan_id=${currentReport.scan_id}`;
+            url += `? scan_id = ${currentReport.scan_id} `;
         }
 
         const res = await fetch(url);
@@ -704,12 +726,12 @@ async function loadExploits() {
         container.innerHTML = '';
         if (exploits.length === 0) {
             container.innerHTML = `
-                <div class="empty-state">
+        < div class="empty-state" >
                     <div class="empty-icon">🛡️</div>
                     <h3>No Exploits Found</h3>
                     <p>No automated exploits were generated for this scan.</p>
                     <p style="font-size: 0.9rem; margin-top: 0.5rem; opacity: 0.7;">Ensure you have an AI Provider configured and the scan found critical vulnerabilities.</p>
-                </div>`;
+                </div > `;
             return;
         }
 
@@ -726,13 +748,13 @@ async function loadExploits() {
             const payloadStr = JSON.stringify(payload);
 
             el.innerHTML = `
-                <div class="exploit-header">
+        < div class="exploit-header" >
                     <div class="exploit-icon">${icon}</div>
                     <div class="exploit-title">
                         <h3>${escapeHtml(exp.type.replace(/_/g, ' ').toUpperCase())}</h3>
                         <span class="exploit-target">${escapeHtml(target)}</span>
                     </div>
-                </div>
+                </div >
                 <div class="exploit-body">
                     <p>${escapeHtml(exp.description || 'Automated Proof of Concept exploit generated by AI analysis.')}</p>
                     <div class="exploit-meta clickable" onclick='openEditPayloadModal("${escapeHtml(target)}", ${payloadStr}, "${escapeHtml(exp.type)}")' title="Click to edit payload">
@@ -744,7 +766,7 @@ async function loadExploits() {
                         <span class="icon">🚀</span> Launch Exploit
                     </button>
                 </div>
-            `;
+    `;
             container.appendChild(el);
         });
     } catch (e) {
@@ -780,7 +802,7 @@ async function runExploit() {
             statusBox.innerHTML = '';
             const p = document.createElement('p');
             p.className = 'error';
-            p.textContent = `Failed to start: ${err.detail}`;
+            p.textContent = `Failed to start: ${err.detail} `;
             statusBox.appendChild(p);
             return;
         }
@@ -800,7 +822,7 @@ async function runExploit() {
             try {
                 let url = '/api/exploit/results';
                 if (currentReport && currentReport.scan_id) {
-                    url += `?scan_id=${currentReport.scan_id}`;
+                    url += `? scan_id = ${currentReport.scan_id} `;
                 }
 
                 const r = await fetch(url);
@@ -820,14 +842,14 @@ async function runExploit() {
         statusBox.innerHTML = '';
         const p = document.createElement('p');
         p.className = 'error';
-        p.textContent = `Error: ${e.message}`;
+        p.textContent = `Error: ${e.message} `;
         statusBox.appendChild(p);
     }
 }
 
 function renderExploitResults(results) {
     const container = document.getElementById('exploit-results');
-    let html = `<table>
+    let html = `< table >
         <thead>
             <tr>
                 <th>Type</th>
@@ -848,7 +870,7 @@ function renderExploitResults(results) {
         </tr>`;
     });
 
-    html += '</tbody></table>';
+    html += '</tbody></table > ';
     container.innerHTML = html;
 }
 

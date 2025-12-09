@@ -72,9 +72,9 @@ class Compiler :
                     console .print (f"[green]    Executable moved to: {dest_path }[/]")
 
 
-                    if self .os_name !="windows":
-                        os .chmod (dest_path ,0o755 )
-                else :
+                    if self.os_name != "windows":
+                        os.chmod(dest_path, 0o700)
+                else:
                     console .print (f"[red]    Could not find compiled binary at {dist_path }[/]")
 
 

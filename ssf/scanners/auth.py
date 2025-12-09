@@ -54,8 +54,10 @@ class AuthScanner (BaseScanner ):
         email ="ssf_test_weak@example.com"
         passwords =["123"]
 
-        if self .client .config .level >=3 :
-            passwords .extend (["password","123456","qwerty","admin"])
+        if self.client.config.level >= 3:
+        
+            common_weak = ["password", "123456", "qwerty", "admin"]
+            passwords.extend(common_weak)
 
         for password in passwords :
             try :
@@ -71,8 +73,8 @@ class AuthScanner (BaseScanner ):
                 self .log_error (e )
     async def _test_rate_limiting (self ):
         self .log ("    [*] Testing Login Rate Limiting...","cyan")
-        email ="ssf_test_rate@example.com"
-        password ="wrongpassword"
+        email = "ssf_test_rate@example.com"
+        password = "test_password_rate_limit"
         blocked =False 
         for i in range (10 ):
             try :

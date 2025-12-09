@@ -1,5 +1,5 @@
 import json 
-import re 
+import fnmatch 
 from typing import Dict ,List ,Optional 
 class KnowledgeBase :
     def __init__ (self ):
@@ -34,9 +34,9 @@ class KnowledgeBase :
                 targets .extend ([f .get ("name","")for f in findings .get ("rpc",[])])
             if rule_type =="*"or rule_type =="storage":
                 targets .extend ([f .get ("name","")for f in findings .get ("storage",[])])
-            for t in targets :
-                if re .fullmatch (pattern ,t ):
-                    found =True 
+            for t in targets:
+                if fnmatch.fnmatch(t, pattern):
+                    found = True
                     break 
             old_status =rule .get ("status","active")
             new_status ="active"if found else "remediated"
@@ -58,13 +58,11 @@ class KnowledgeBase :
             pass 
         if not target_name :
             return None 
-        for rule in self .rules :
-            if rule .get ("type")!=finding_type and rule .get ("type")!="*":
-                continue 
-            pattern =rule .get ("pattern","")
-            try :
-                if re .fullmatch (pattern ,target_name ):
-                    return rule .get ("reason","Accepted Risk")
-            except re .error :
-                continue 
+        for rule in self.rules:
+            if rule.get("type") != finding_type and rule.get("type") != "*":
+                continue
+            pattern = rule.get("pattern", "")
+       
+            if fnmatch.fnmatch(target_name, pattern):
+                return rule.get("reason", "Accepted Risk") 
         return None 

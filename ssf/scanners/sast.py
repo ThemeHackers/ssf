@@ -33,10 +33,17 @@ class SASTScanner:
     def scan(self) -> Dict[str, Any]:
         console.print(f"[cyan][*] Starting Offline SAST Scan on: {self.target_path}[/]")
         
-        if os.path.isfile(self.target_path):
-            self._scan_file(self.target_path)
-        elif os.path.isdir(self.target_path):
-            for root, _, files in os.walk(self.target_path):
+     
+        abs_target = os.path.abspath(self.target_path)
+        if not os.path.exists(abs_target):
+            console.print(f"[red][!] Invalid path: {abs_target}[/]")
+            return {"risk_level": "None", "summary": "Invalid path", "findings": []}
+
+        if os.path.isfile(abs_target):
+            self._scan_file(abs_target)
+        elif os.path.isdir(abs_target):
+     
+            for root, _, files in os.walk(abs_target):
                 for file in files:
                     if file.endswith(('.js', '.ts', '.jsx', '.tsx', '.py', '.env', '.json')):
                         self._scan_file(os.path.join(root, file))
