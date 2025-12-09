@@ -33,7 +33,7 @@ dependencies = [
     "h11==0.16.0",
     "zipp==3.19.1",
     "anyio==4.4.0",
-
+]
 [project.scripts]
 ssf = "ssf.__main__:main_sync"
 
