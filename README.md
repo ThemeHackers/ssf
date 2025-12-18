@@ -434,5 +434,6 @@ The developers assume no liability and are not responsible for any misuse or dam
 
 ## 👉 Reference From
 
-[See Project Github](https://github.com/ThemeHackers/ssf)
-[Python Package Index](https://pypi.org/project/supabase-audit-framework/)
+- [See Project Github](https://github.com/ThemeHackers/ssf)
+- [Python Package Index](https://pypi.org/project/supabase-audit-framework/)
+- [Quick Reference Gist](GIST.md) - Shareable quick-start reference for SSF
