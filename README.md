@@ -87,7 +87,7 @@ ssf <SUPABASE_URL> <ANON_KEY>
 Enable AI analysis, brute-forcing, and HTML reporting:
 ```bash
 # Using Gemini (Cloud)
-ssf <URL> <KEY> --agent-provider gemini --agent gemini-2.0-flash --agent-key "YOUR_API_KEY" --brute --html --json
+ssf <URL> <KEY> --agent-provider gemini --agent gemini-2.5-flash --agent-key "YOUR_API_KEY" --brute --html --json
 
 # Using OpenAI (GPT-4)
 ssf <URL> <KEY> --agent-provider openai --agent gpt-4-turbo --agent-key "sk-..." --brute --html --json
