@@ -13,4 +13,4 @@ def show_banner (console :Console ):
     description ="ssf is a supabase security framework that checks the security of your supabase system where most of the developers tend to forget important settings or leave too much anon privileges causing vulnerabilities."
     ai_support ="\n[bold yellow]Supported AI Providers:[/bold yellow] Gemini, Ollama, OpenAI, DeepSeek, Anthropic"
     console .print (f"[bold cyan]{banner_art }[/]")
-    console .print (Panel (description +"\n"+ai_support ,border_style ="cyan",title ="Supabase Security Framework",subtitle ="v1.2.16"))
+    console .print (Panel (description +"\n"+ai_support ,border_style ="cyan",title ="Supabase Security Framework",subtitle ="v1.2.17"))

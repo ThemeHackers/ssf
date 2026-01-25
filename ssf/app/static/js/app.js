@@ -398,7 +398,7 @@ function handleConnectionError() {
             updateDashboard({});
 
             const reportContent = document.getElementById('report-content');
-            reportContent.innerHTML = ''; 
+            reportContent.innerHTML = '';
 
             const emptyState = document.createElement('div');
             emptyState.className = 'empty-state';
@@ -661,7 +661,7 @@ async function loadHistory() {
             el.className = 'finding-item';
             el.style.cursor = 'pointer';
 
-        
+
             const infoDiv = document.createElement('div');
 
             const titleStrong = document.createElement('strong');
@@ -861,7 +861,7 @@ async function loadExploits() {
             bodyDiv.appendChild(descP);
             bodyDiv.appendChild(metaDiv);
 
-   
+
             const actionsDiv = document.createElement('div');
             actionsDiv.className = 'exploit-actions';
 
@@ -1096,70 +1096,221 @@ function updateDashboard(report) {
         aiProvider.textContent = (savedConfig.ai_provider || 'None').toUpperCase();
     }
 
-    if (crit === 0 && high === 0 && med === 0) {
-        aiSummary.innerHTML = `
-            <div class="ai-report-section">
-                <h4>🎉 Executive Summary</h4>
-                <p style="color:var(--success)"><strong>Excellent Security Posture!</strong></p>
-                <p>Based on the comprehensive scan of your Supabase instance, no significant vulnerabilities were detected across RLS policies, Authentication, Storage, or Database configurations.</p>
-                <p>Your system appears to be following best practices. Continue to monitor for changes and run regular scans.</p>
-            </div>
-        `;
-    } else {
-        let summary = `<div class="ai-report-section">
-            <h4>🚨 Executive Summary</h4>
-            <p>The security scan has identified <strong>${crit + high + med} issues</strong> that require attention. The overall security posture is <strong style="color:${crit > 0 ? 'var(--danger)' : 'var(--warning)'}">${crit > 0 ? 'CRITICAL' : 'AT RISK'}</strong>.</p>
-            <p>Immediate remediation is recommended for the <strong>${crit} Critical</strong> and <strong>${high} High</strong> severity vulnerabilities to prevent potential data breaches or unauthorized access.</p>
-        </div>`;
 
-        summary += `<div class="ai-report-section">
-            <h4>🔍 Key Vulnerability Analysis</h4>
-            <ul class="ai-findings-list">`;
+    aiSummary.innerHTML = '';
+
+    if (crit === 0 && high === 0 && med === 0) {
+        const section = document.createElement('div');
+        section.className = 'ai-report-section';
+
+        const h4 = document.createElement('h4');
+        h4.textContent = '🎉 Executive Summary';
+        section.appendChild(h4);
+
+        const p1 = document.createElement('p');
+        p1.style.color = 'var(--success)';
+        const strong1 = document.createElement('strong');
+        strong1.textContent = 'Excellent Security Posture!';
+        p1.appendChild(strong1);
+        section.appendChild(p1);
+
+        const p2 = document.createElement('p');
+        p2.textContent = 'Based on the comprehensive scan of your Supabase instance, no significant vulnerabilities were detected across RLS policies, Authentication, Storage, or Database configurations.';
+        section.appendChild(p2);
+
+        const p3 = document.createElement('p');
+        p3.textContent = 'Your system appears to be following best practices. Continue to monitor for changes and run regular scans.';
+        section.appendChild(p3);
+
+        aiSummary.appendChild(section);
+    } else {
+        const section1 = document.createElement('div');
+        section1.className = 'ai-report-section';
+
+        const h4_1 = document.createElement('h4');
+        h4_1.textContent = '🚨 Executive Summary';
+        section1.appendChild(h4_1);
+
+        const p1 = document.createElement('p');
+        p1.appendChild(document.createTextNode('The security scan has identified '));
+        const strong1 = document.createElement('strong');
+        strong1.textContent = `${crit + high + med} issues`;
+        p1.appendChild(strong1);
+        p1.appendChild(document.createTextNode(' that require attention. The overall security posture is '));
+        const strong2 = document.createElement('strong');
+        strong2.style.color = crit > 0 ? 'var(--danger)' : 'var(--warning)';
+        strong2.textContent = crit > 0 ? 'CRITICAL' : 'AT RISK';
+        p1.appendChild(strong2);
+        p1.appendChild(document.createTextNode('.'));
+        section1.appendChild(p1);
+
+        const p2 = document.createElement('p');
+        p2.appendChild(document.createTextNode('Immediate remediation is recommended for the '));
+        const strong3 = document.createElement('strong');
+        strong3.textContent = `${crit} Critical`;
+        p2.appendChild(strong3);
+        p2.appendChild(document.createTextNode(' and '));
+        const strong4 = document.createElement('strong');
+        strong4.textContent = `${high} High`;
+        p2.appendChild(strong4);
+        p2.appendChild(document.createTextNode(' severity vulnerabilities to prevent potential data breaches or unauthorized access.'));
+        section1.appendChild(p2);
+
+        aiSummary.appendChild(section1);
+
+        const section2 = document.createElement('div');
+        section2.className = 'ai-report-section';
+
+        const h4_2 = document.createElement('h4');
+        h4_2.textContent = '🔍 Key Vulnerability Analysis';
+        section2.appendChild(h4_2);
+
+        const ul = document.createElement('ul');
+        ul.className = 'ai-findings-list';
 
         if (report.findings.auth && report.findings.auth.leaked) {
-            summary += `<li><span class="badge critical">CRITICAL</span> <strong>Authentication Bypass:</strong> User data is publicly accessible via the API. This is a severe breach risk.</li>`;
+            const li = document.createElement('li');
+            const badge = document.createElement('span');
+            badge.className = 'badge critical';
+            badge.textContent = 'CRITICAL';
+            li.appendChild(badge);
+            li.appendChild(document.createTextNode(' '));
+            const strong = document.createElement('strong');
+            strong.textContent = 'Authentication Bypass:';
+            li.appendChild(strong);
+            li.appendChild(document.createTextNode(' User data is publicly accessible via the API. This is a severe breach risk.'));
+            ul.appendChild(li);
         }
 
         if (report.findings.postgres && report.findings.postgres.exposed_system_tables.length > 0) {
-            summary += `<li><span class="badge critical">CRITICAL</span> <strong>Database Exposure:</strong> ${report.findings.postgres.exposed_system_tables.length} system tables are publicly exposed. Attackers could enumerate database structure.</li>`;
+            const li = document.createElement('li');
+            const badge = document.createElement('span');
+            badge.className = 'badge critical';
+            badge.textContent = 'CRITICAL';
+            li.appendChild(badge);
+            li.appendChild(document.createTextNode(' '));
+            const strong = document.createElement('strong');
+            strong.textContent = 'Database Exposure:';
+            li.appendChild(strong);
+            li.appendChild(document.createTextNode(` ${report.findings.postgres.exposed_system_tables.length} system tables are publicly exposed. Attackers could enumerate database structure.`));
+            ul.appendChild(li);
         }
 
         if (report.findings.rls && report.findings.rls.length > 0) {
-            const tables = report.findings.rls.map(t => escapeHtml(t.table)).slice(0, 3).join(', ');
+            const tables = report.findings.rls.map(t => t.table).slice(0, 3).join(', ');
             const more = report.findings.rls.length > 3 ? `and ${report.findings.rls.length - 3} more` : '';
-            summary += `<li><span class="badge high">HIGH</span> <strong>RLS Misconfiguration:</strong> Row Level Security is disabled or permissive on ${report.findings.rls.length} tables (e.g., <em>${tables} ${more}</em>).</li>`;
+            const li = document.createElement('li');
+            // We use escapeHtml inside the innerHTML string construction or textContent. 
+            // Here we are safely using innerHTML with escaped values or static DOM construction?
+            // To be 100% safe, let's build the LI via DOM.
+            const badge = document.createElement('span');
+            badge.className = 'badge high';
+            badge.textContent = 'HIGH';
+            li.appendChild(badge);
+            li.appendChild(document.createTextNode(' '));
+            const strong = document.createElement('strong');
+            strong.textContent = 'RLS Misconfiguration:';
+            li.appendChild(strong);
+            li.appendChild(document.createTextNode(` Row Level Security is disabled or permissive on ${report.findings.rls.length} tables (e.g., `));
+            const em = document.createElement('em');
+            em.textContent = `${tables} ${more}`;
+            li.appendChild(em);
+            li.appendChild(document.createTextNode(').'));
+            ul.appendChild(li);
         }
 
         if (report.findings.storage && report.findings.storage.some(b => b.public)) {
-            const buckets = report.findings.storage.filter(b => b.public).map(b => escapeHtml(b.name)).join(', ');
-            summary += `<li><span class="badge medium">MEDIUM</span> <strong>Public Storage Buckets:</strong> The following buckets allow public access: <em>${buckets}</em>. Ensure this is intended for static assets.</li>`;
+            const buckets = report.findings.storage.filter(b => b.public).map(b => b.name).join(', ');
+            const li = document.createElement('li');
+
+            const badge = document.createElement('span');
+            badge.className = 'badge medium';
+            badge.textContent = 'MEDIUM';
+            li.appendChild(badge);
+            li.appendChild(document.createTextNode(' '));
+            const strong = document.createElement('strong');
+            strong.textContent = 'Public Storage Buckets:';
+            li.appendChild(strong);
+            li.appendChild(document.createTextNode(' The following buckets allow public access: '));
+            const em = document.createElement('em');
+            em.textContent = buckets;
+            li.appendChild(em);
+            li.appendChild(document.createTextNode('. Ensure this is intended for static assets.'));
+            ul.appendChild(li);
         }
 
         if (report.findings.rpc && report.findings.rpc.length > 0) {
-            summary += `<li><span class="badge medium">MEDIUM</span> <strong>Insecure Functions:</strong> ${report.findings.rpc.length} database functions are callable by anonymous users.</li>`;
+            const li = document.createElement('li');
+            const badge = document.createElement('span');
+            badge.className = 'badge medium';
+            badge.textContent = 'MEDIUM';
+            li.appendChild(badge);
+            li.appendChild(document.createTextNode(' '));
+            const strong = document.createElement('strong');
+            strong.textContent = 'Insecure Functions:';
+            li.appendChild(strong);
+            li.appendChild(document.createTextNode(` ${report.findings.rpc.length} database functions are callable by anonymous users.`));
+            ul.appendChild(li);
         }
 
-        summary += `</ul></div>`;
+        section2.appendChild(ul);
+        aiSummary.appendChild(section2);
 
-        summary += `<div class="ai-report-section">
-            <h4>🛡️ Strategic Recommendations</h4>
-            <ol class="ai-remediation-list">
-                ${crit > 0 ? '<li><strong>Immediate Containment:</strong> Restrict public access to exposed tables and rotate compromised API keys immediately.</li>' : ''}
-                <li><strong>Enforce RLS:</strong> Enable Row Level Security on all tables and define strict policies for SELECT, INSERT, UPDATE, and DELETE.</li>
-                <li><strong>Review Storage:</strong> Set storage buckets to 'Private' by default and use signed URLs for access where possible.</li>
-                <li><strong>Audit Functions:</strong> Review SECURITY DEFINER functions to ensure they do not grant unintended privileges.</li>
-            </ol>
-        </div>`;
+        const section3 = document.createElement('div');
+        section3.className = 'ai-report-section';
+        const h4_3 = document.createElement('h4');
+        h4_3.textContent = '🛡️ Strategic Recommendations';
+        section3.appendChild(h4_3);
+
+        const ol = document.createElement('ol');
+        ol.className = 'ai-remediation-list';
+
+        if (crit > 0) {
+            const li = document.createElement('li');
+            const strong = document.createElement('strong');
+            strong.textContent = 'Immediate Containment:';
+            li.appendChild(strong);
+            li.appendChild(document.createTextNode(' Restrict public access to exposed tables and rotate compromised API keys immediately.'));
+            ol.appendChild(li);
+        }
+
+        const li1 = document.createElement('li');
+        const recStrong1 = document.createElement('strong');
+        recStrong1.textContent = 'Enforce RLS:';
+        li1.appendChild(recStrong1);
+        li1.appendChild(document.createTextNode(' Enable Row Level Security on all tables and define strict policies for SELECT, INSERT, UPDATE, and DELETE.'));
+        ol.appendChild(li1);
+
+        const li2 = document.createElement('li');
+        const recStrong2 = document.createElement('strong');
+        recStrong2.textContent = 'Review Storage:';
+        li2.appendChild(recStrong2);
+        li2.appendChild(document.createTextNode(' Set storage buckets to \'Private\' by default and use signed URLs for access where possible.'));
+        ol.appendChild(li2);
+
+        const li3 = document.createElement('li');
+        const recStrong3 = document.createElement('strong');
+        recStrong3.textContent = 'Audit Functions:';
+        li3.appendChild(recStrong3);
+        li3.appendChild(document.createTextNode(' Review SECURITY DEFINER functions to ensure they do not grant unintended privileges.'));
+        ol.appendChild(li3);
+
+        section3.appendChild(ol);
+        aiSummary.appendChild(section3);
 
         if (report.threat_model) {
-            summary += `<div style="margin-top: 1.5rem; text-align: center;">
-                <button class="btn-primary large" onclick="navigateToThreatModel()">
-                    🕸️ View Visual Threat Model
-                </button>
-            </div>`;
-        }
+            const divBtn = document.createElement('div');
+            divBtn.style.textAlign = 'center';
+            divBtn.style.marginTop = '1.5rem';
 
-        aiSummary.innerHTML = summary;
+            const btn = document.createElement('button');
+            btn.className = 'btn-primary large';
+            btn.onclick = navigateToThreatModel;
+            btn.textContent = '🕸️ View Visual Threat Model';
+            divBtn.appendChild(btn);
+
+            aiSummary.appendChild(divBtn);
+        }
     }
 }
 

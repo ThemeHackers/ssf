@@ -205,7 +205,7 @@ def safe_join(base: str, *paths: str) -> str:
     try:
         base = os.path.abspath(base)
         final_path = os.path.abspath(os.path.join(base, *paths))
-        if not final_path.startswith(base):
+        if os.path.commonpath([base, final_path]) != base:
             raise ValueError("Path traversal attempt detected")
         return final_path
     except Exception:
@@ -331,6 +331,9 @@ async def get_history():
 
 @app.delete("/api/history/{scan_id}")
 async def delete_history(scan_id: str):
+    import re
+    if not re.match(r'^[\w-]+$', scan_id):
+        raise HTTPException(status_code=400, detail="Invalid scan ID format")
     reports_dir = os.path.abspath("reports")
     try:
         scan_path = safe_join(reports_dir, scan_id)
@@ -349,6 +352,9 @@ async def delete_history(scan_id: str):
 
 @app.get("/api/report/{scan_id}")
 async def get_report(scan_id: str):
+    import re
+    if not re.match(r'^[\w-]+$', scan_id):
+        raise HTTPException(status_code=400, detail="Invalid scan ID format")
     reports_dir = os.path.abspath("reports")
     try:
         report_path = safe_join(reports_dir, scan_id, "report.json")
@@ -405,11 +411,22 @@ async def list_dumps():
 
 @app.get("/api/download/{scan_id}/{filename}")
 async def download_dump(scan_id: str, filename: str):
+    import re
+    if not re.match(r'^[\w-]+$', scan_id) or '..' in filename or '/' in filename or '\\' in filename:
+         raise HTTPException(status_code=400, detail="Invalid parameters")
+    filename = os.path.basename(filename)
     reports_dir = os.path.abspath("reports")
-    try:
-        file_path = safe_join(reports_dir, scan_id, "dumps", filename)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid path")
+    
+
+    full_path = os.path.join(reports_dir, scan_id, "dumps", filename)
+    full_path = os.path.abspath(full_path)
+    
+    expected_base = os.path.abspath(os.path.join(reports_dir, scan_id, "dumps"))
+    
+    if os.path.commonpath([expected_base, full_path]) != expected_base:
+        raise HTTPException(status_code=400, detail="Path traversal detected")
+        
+    file_path = full_path
 
     if os.path.exists(file_path) and os.path.isfile(file_path):
         from fastapi.responses import FileResponse
@@ -434,6 +451,9 @@ async def get_risks():
 
 @app.get("/api/exploits")
 def get_exploits(scan_id: str = None):
+    import re
+    if scan_id and not re.match(r'^[\w-]+$', scan_id):
+        raise HTTPException(status_code=400, detail="Invalid scan ID format")
     reports_dir = os.path.abspath("reports")
     target_dir = None
 
@@ -502,6 +522,9 @@ async def run_exploit_endpoint(req: ExploitRequest, background_tasks: Background
 
 @app.get("/api/exploit/results")
 def get_exploit_results(scan_id: str = None):
+    import re
+    if scan_id and not re.match(r'^[\w-]+$', scan_id):
+        raise HTTPException(status_code=400, detail="Invalid scan ID format")
     reports_dir = os.path.abspath("reports")
     target_dir = None
 

@@ -1,3 +1,4 @@
+import secrets
 from typing import Dict ,Any 
 from ssf.core .base import BaseScanner 
 class AuthScanner (BaseScanner ):
@@ -74,7 +75,7 @@ class AuthScanner (BaseScanner ):
     async def _test_rate_limiting (self ):
         self .log ("    [*] Testing Login Rate Limiting...","cyan")
         email = "ssf_test_rate@example.com"
-        password = "test_password_rate_limit"
+        password = secrets.token_urlsafe(16)
         blocked =False 
         for i in range (10 ):
             try :
