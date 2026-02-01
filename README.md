@@ -1,6 +1,6 @@
 # Supabase Security Framework (ssf) v1.2.17
 
-![Banner](https://img.shields.io/badge/Supabase-Security-green) ![Python](https://img.shields.io/badge/Python-3.10%2B-blue) ![License](https://img.shields.io/badge/License-MIT-yellow) ![Status](https://img.shields.io/badge/Maintained-Yes-brightgreen)
+![Banner](https://img.shields.io/badge/Supabase-Security-green) ![Python](https://img.shields.io/badge/Python-3.10%2B-blue) ![License](https://img.shields.io/badge/License-MIT-yellow) ![Status](https://img.shields.io/badge/Maintained-Yes-brightgreen) [![security: bandit](https://img.shields.io/badge/security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
 
 **ssf** is an enterprise-grade, asynchronous security auditing framework for Supabase projects. It goes beyond simple configuration checks to **actively test** for vulnerabilities like SQL Injection, IDOR, and Information Leakage.
 > [!Warning]
